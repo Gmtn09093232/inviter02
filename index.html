@@ -380,7 +380,6 @@
                 <div class="user-avatar" id="userAvatar">A</div>
                 <span id="userName">Admin</span>
             </div>
-            <!-- Logout button removed -->
         </div>
     </aside>
 
@@ -393,7 +392,7 @@
                 <span class="page-title" id="pageTitle"><i class="fas fa-chart-pie"></i> Dashboard</span>
             </div>
             <div class="topbar-actions">
-                <!-- Quick actions can be added here -->
+                <!-- quick action buttons can be placed here -->
             </div>
         </div>
 
@@ -409,7 +408,7 @@
 
     <script>
         // ============================================================
-        // API CLIENT (no auth)
+        // API CLIENT (improved error handling)
         // ============================================================
         const API = {
             baseURL: '/api',
@@ -417,12 +416,24 @@
                 const url = `${this.baseURL}${endpoint}`;
                 const options = { method, headers: { 'Content-Type': 'application/json' } };
                 if (data) options.body = JSON.stringify(data);
-                const response = await fetch(url, options);
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.error || result.message || 'Request failed');
+                try {
+                    const response = await fetch(url, options);
+                    const text = await response.text();
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Server returned non‑JSON: ${text.substring(0, 100)}`);
+                    }
+                    if (!response.ok) {
+                        const errorMsg = result.error || result.message || `HTTP ${response.status}`;
+                        throw new Error(errorMsg);
+                    }
+                    return result;
+                } catch (error) {
+                    console.error(`❌ API ${method} ${endpoint} failed:`, error);
+                    throw error;
                 }
-                return result;
             },
             getItems(params = {}) {
                 const query = new URLSearchParams(params).toString();
@@ -498,11 +509,9 @@
             }
 
             initUI() {
-                // Hamburger toggle
                 document.getElementById('hamburgerBtn').addEventListener('click', () => {
                     document.getElementById('sidebar').classList.toggle('open');
                 });
-                // Close sidebar on link click (mobile)
                 document.querySelectorAll('#sidebarNav .nav-link').forEach(link => {
                     link.addEventListener('click', () => {
                         if (window.innerWidth <= 992) {
@@ -510,7 +519,6 @@
                         }
                     });
                 });
-                // Nav clicks
                 document.querySelectorAll('#sidebarNav .nav-link').forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
