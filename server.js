@@ -29,6 +29,49 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ============================================================
+// SEED DEFAULT ADMIN USER
+// ============================================================
+async function seedAdmin() {
+    try {
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('username', 'admin')
+            .limit(1);
+
+        if (error) {
+            console.error('⚠️ Error checking admin user:', error.message);
+            return;
+        }
+
+        if (!users || users.length === 0) {
+            console.log('🔑 Creating default admin user...');
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                    username: 'admin',
+                    password: hashedPassword,
+                    full_name: 'Administrator',
+                    role: 'admin'
+                });
+            if (insertError) {
+                console.error('❌ Error creating admin:', insertError.message);
+            } else {
+                console.log('✅ Admin user created (username: admin, password: admin123)');
+            }
+        } else {
+            console.log('✅ Admin user already exists.');
+        }
+    } catch (err) {
+        console.error('❌ Seed error:', err.message);
+    }
+}
+
+// Run seed
+seedAdmin();
+
+// ============================================================
 // MIDDLEWARE
 // ============================================================
 app.use(cors());
@@ -79,7 +122,6 @@ async function supabaseQuery(table, operation, params = {}) {
             const { select = '*', filter = {}, order = {}, range = {} } = params;
             let q = query.select(select);
 
-            // Apply filters
             for (const [key, value] of Object.entries(filter)) {
                 if (Array.isArray(value)) {
                     q = q.in(key, value);
@@ -855,9 +897,9 @@ app.get('/api/users', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // ============================================================
-// SERVE FRONTEND - FIXED ROUTE
+// SERVE FRONTEND - CORRECTED ROUTE
 // ============================================================
-app.get('/', (req, res) => {   // ✅ CORRECTED: '/' instead of './'
+app.get('/', (req, res) => {
     const indexPath = path.join(__dirname, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
