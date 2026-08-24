@@ -1,4 +1,3 @@
-
 // ============================================================
 // SERVER.JS - Inventory System with Supabase (No Auth)
 // ============================================================
@@ -41,7 +40,14 @@ app.use(express.static(path.join(__dirname, '.')));
 const SYSTEM_USER = { username: 'admin', id: 1 };
 
 // ============================================================
-// HELPER FUNCTIONS (unchanged)
+// HEALTH CHECK (to test if server is alive)
+// ============================================================
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// ============================================================
+// HELPER FUNCTIONS
 // ============================================================
 async function supabaseQuery(table, operation, params = {}) {
     try {
@@ -128,6 +134,7 @@ app.get('/api/items', async (req, res) => {
             pagination: { page: pageNum, limit: limitNum, total: count || 0, pages: Math.ceil((count || 0) / limitNum) }
         });
     } catch (error) {
+        console.error('❌ /api/items error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -141,6 +148,7 @@ app.get('/api/items/:id', async (req, res) => {
         item.total_price = item.quantity * item.unit_price;
         res.json(item);
     } catch (error) {
+        console.error('❌ /api/items/:id error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -183,6 +191,7 @@ app.post('/api/items', [
         newItem.total_price = newItem.quantity * newItem.unit_price;
         res.status(201).json(newItem);
     } catch (error) {
+        console.error('❌ POST /api/items error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -240,6 +249,7 @@ app.put('/api/items/:id', [
         updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
         res.json(updatedItem);
     } catch (error) {
+        console.error('❌ PUT /api/items/:id error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -252,6 +262,7 @@ app.delete('/api/items/:id', async (req, res) => {
         if (!data || data.length === 0) return res.status(404).json({ error: 'Item not found' });
         res.json({ message: 'Item deleted successfully' });
     } catch (error) {
+        console.error('❌ DELETE /api/items/:id error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -275,6 +286,7 @@ app.get('/api/transactions', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json({ transactions: data, pagination: { page: pageNum, limit: limitNum, total: count || 0, pages: Math.ceil((count || 0) / limitNum) } });
     } catch (error) {
+        console.error('❌ /api/transactions error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -323,6 +335,7 @@ app.post('/api/transactions', [
 
         res.status(201).json(txnData[0]);
     } catch (error) {
+        console.error('❌ POST /api/transactions error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -337,6 +350,7 @@ app.get('/api/items/:id/transactions', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json(data);
     } catch (error) {
+        console.error('❌ /api/items/:id/transactions error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -348,6 +362,7 @@ app.get('/api/categories', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json(data);
     } catch (error) {
+        console.error('❌ /api/categories error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -363,6 +378,7 @@ app.post('/api/categories', [
         if (error) throw new Error(error.message);
         res.status(201).json(data[0]);
     } catch (error) {
+        console.error('❌ POST /api/categories error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -427,6 +443,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             monthlySummary: monthlySummaryArray
         });
     } catch (error) {
+        console.error('❌ /api/dashboard/stats error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -438,6 +455,7 @@ app.get('/api/suppliers', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json(data);
     } catch (error) {
+        console.error('❌ /api/suppliers error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -460,6 +478,7 @@ app.post('/api/suppliers', [
         if (error) throw new Error(error.message);
         res.status(201).json(data[0]);
     } catch (error) {
+        console.error('❌ POST /api/suppliers error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -477,6 +496,7 @@ app.get('/api/reports/top-items', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json(data);
     } catch (error) {
+        console.error('❌ /api/reports/top-items error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -502,6 +522,7 @@ app.get('/api/reports/monthly-summary', async (req, res) => {
             .sort((a, b) => a.month.localeCompare(b.month));
         res.json(result);
     } catch (error) {
+        console.error('❌ /api/reports/monthly-summary error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -517,8 +538,16 @@ app.get('/api/reports/low-stock', async (req, res) => {
         if (error) throw new Error(error.message);
         res.json(data);
     } catch (error) {
+        console.error('❌ /api/reports/low-stock error:', error.message);
         res.status(500).json({ error: error.message });
     }
+});
+
+// ============================================================
+// CATCH-ALL for API routes – returns JSON error
+// ============================================================
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ error: `API endpoint not found: ${req.originalUrl}` });
 });
 
 // ---- Serve Frontend ----
@@ -540,6 +569,7 @@ app.listen(PORT, () => {
     console.log(`========================================`);
     console.log(`📡 Server: http://localhost:${PORT}`);
     console.log(`📊 API: http://localhost:${PORT}/api`);
+    console.log(`🏥 Health: http://localhost:${PORT}/api/health`);
     console.log(`🗄️  Database: Supabase (PostgreSQL)`);
     console.log(`👤 Default User: admin (auto-assigned)`);
     console.log(`========================================\n`);
