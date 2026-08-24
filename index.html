@@ -1,697 +1,928 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amhara Metal Industry - Store Inventory System</title>
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amhara Metal · Inventory System</title>
+    <!-- Bootstrap 5 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
-        /* ... same styles as before ... */
-        .login-container {
-            max-width: 420px;
-            margin: 100px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        /* ── Reset & Base ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f7fc;
+            display: flex;
+            min-height: 100vh;
         }
-        .login-container h3 {
-            text-align: center;
-            margin-bottom: 24px;
+        a { text-decoration: none; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px;
+            background: #0b1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1050;
+            transition: transform 0.3s ease;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+        }
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-header h4 {
             font-weight: 700;
+            font-size: 1.2rem;
+            margin: 0;
+            letter-spacing: -0.5px;
         }
-        .login-container .form-control {
-            border-radius: 10px;
-            padding: 12px 16px;
+        .sidebar-header h4 i { color: #f9b43a; margin-right: 8px; }
+        .sidebar-header small {
+            display: block;
+            opacity: 0.65;
+            font-size: 0.7rem;
+            margin-top: 4px;
+            font-weight: 400;
         }
-        .login-container .btn {
-            border-radius: 10px;
-            padding: 12px;
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+            overflow-y: auto;
+        }
+        .sidebar-nav .nav-item {
+            margin-bottom: 4px;
+        }
+        .sidebar-nav .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 10px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .sidebar-nav .nav-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .sidebar-nav .nav-link.active {
+            background: #1e3a5f;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .sidebar-nav .nav-link i { width: 22px; text-align: center; }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-footer .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-footer .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #1e3a5f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 600;
+            color: #f9b43a;
         }
+
+        /* ── Main Content ── */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 24px 28px;
+            min-height: 100vh;
+        }
+
+        /* ── Top Bar ── */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .topbar .page-title {
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #0b1a2e;
+            letter-spacing: -0.5px;
+        }
+        .topbar .page-title i {
+            color: #f9b43a;
+            margin-right: 10px;
+        }
+        .topbar .topbar-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* ── Stat Cards ── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 22px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+            border: 1px solid #e9eef3;
+            transition: transform 0.1s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #6b7a8f;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0b1a2e;
+            line-height: 1.2;
+            margin-top: 6px;
+        }
+        .stat-card .stat-icon {
+            float: right;
+            font-size: 2.2rem;
+            opacity: 0.25;
+            color: #1e3a5f;
+        }
+
+        /* ── Cards (panels) ── */
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e9eef3;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            padding: 20px 22px;
+            margin-bottom: 24px;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .panel-header h5 {
+            font-weight: 600;
+            margin: 0;
+            color: #0b1a2e;
+        }
+        .panel-header h5 i { color: #f9b43a; margin-right: 8px; }
+
+        /* ── Table Styling ── */
+        .table-wrap { overflow-x: auto; }
+        .table-custom {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+        }
+        .table-custom thead th {
+            background: #f0f4fa;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 14px;
+            border: none;
+            white-space: nowrap;
+        }
+        .table-custom tbody tr {
+            background: #fff;
+            border-radius: 10px;
+            transition: background 0.1s;
+        }
+        .table-custom tbody tr:hover { background: #f8faff; }
+        .table-custom tbody td {
+            padding: 12px 14px;
+            border: none;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        .table-custom tbody td:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        .table-custom tbody td:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        /* Badges */
+        .badge-cat {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        .badge-raw_material { background: #dbeafe; color: #1e3a5f; }
+        .badge-fixed_asset { background: #d1fae5; color: #065f46; }
+        .badge-consumable  { background: #fed7aa; color: #92400e; }
+        .badge-active      { background: #d1fae5; color: #065f46; }
+        .badge-inactive    { background: #e5e7eb; color: #4b5563; }
+        .badge-used        { background: #fef3c7; color: #92400e; }
+        .badge-damaged     { background: #fecaca; color: #991b1b; }
+        .badge-IN          { background: #d1fae5; color: #065f46; }
+        .badge-OUT         { background: #fee2e2; color: #991b1b; }
+
+        /* ── Buttons ── */
+        .btn-primary-custom {
+            background: #1e3a5f;
+            border: none;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .btn-primary-custom:hover {
+            background: #0b2a47;
+            color: #fff;
+            transform: scale(1.02);
+        }
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid #d0d9e4;
+            color: #2c3e50;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .btn-outline-custom:hover {
+            background: #f0f4fa;
+        }
+        .btn-icon-sm {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e0e6ed;
+            background: #fff;
+            color: #2c3e50;
+            transition: all 0.1s;
+        }
+        .btn-icon-sm:hover {
+            background: #f0f4fa;
+            border-color: #b0c0d0;
+        }
+        .btn-icon-sm.danger:hover { background: #fee2e2; border-color: #f5a3a3; color: #991b1b; }
+        .btn-icon-sm.success:hover { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+        .btn-icon-sm.warning:hover { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+
+        /* ── Pagination ── */
+        .pagination-custom .page-link {
+            border: none;
+            color: #2c3e50;
+            border-radius: 8px;
+            margin: 0 3px;
+            font-weight: 500;
+        }
+        .pagination-custom .page-link:hover { background: #e9eef3; }
+        .pagination-custom .active .page-link {
+            background: #1e3a5f;
+            color: #fff;
+        }
+
+        /* ── Utilities ── */
+        .text-muted-strong { color: #6b7a8f; font-weight: 500; }
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 18px; }
+            .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        }
+        @media (max-width: 576px) {
+            .topbar .page-title { font-size: 1.2rem; }
+        }
+
+        /* ── Hamburger toggle for mobile ── */
+        .hamburger {
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: #0b1a2e;
+            display: none;
+            padding: 4px 8px;
+        }
+        @media (max-width: 992px) {
+            .hamburger { display: inline-block; }
+        }
+
+        /* ── Login page override ── */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-box {
+            max-width: 400px;
+            width: 100%;
+            background: #fff;
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 1px solid #e9eef3;
+        }
+        .login-box h3 { font-weight: 700; color: #0b1a2e; }
+        .login-box .brand-icon { color: #f9b43a; margin-right: 8px; }
+
+        /* toast container */
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
+
+        /* Hide elements when not authenticated */
+        .hidden-auth { display: none; }
     </style>
 </head>
 <body>
-    <div id="app"></div>
 
-    <!-- Toast container -->
-    <div class="toast-container"></div>
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-industry"></i> Amhara Metal</h4>
+            <small>Inventory Management System</small>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav">
+            <div class="nav-item"><a class="nav-link active" data-view="dashboard" href="#"><i class="fas fa-chart-pie"></i> Dashboard</a></div>
+            <div class="nav-item"><a class="nav-link" data-view="inventory" href="#"><i class="fas fa-boxes"></i> Inventory</a></div>
+            <div class="nav-item"><a class="nav-link" data-view="transactions" href="#"><i class="fas fa-exchange-alt"></i> Transactions</a></div>
+            <div class="nav-item"><a class="nav-link" data-view="report" href="#"><i class="fas fa-file-alt"></i> Reports</a></div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <span id="userName">User</span>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="inventorySystem.logout()" style="border-color:rgba(255,255,255,0.2);">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="topbar" id="topbar">
+            <div>
+                <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+                <span class="page-title" id="pageTitle"><i class="fas fa-chart-pie"></i> Dashboard</span>
+            </div>
+            <div class="topbar-actions">
+                <!-- Quick actions can be added here -->
+            </div>
+        </div>
+
+        <!-- Dynamic content injected here -->
+        <div id="content"></div>
+    </div>
+
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-    // ============================================================
-    // API CLIENT
-    // ============================================================
-    const API = {
-        baseURL: '/api',
-        token: localStorage.getItem('token') || null,
-
-        setToken(token) {
-            this.token = token;
-            if (token) {
-                localStorage.setItem('token', token);
-            } else {
-                localStorage.removeItem('token');
-            }
-        },
-
-        getHeaders() {
-            return {
-                'Content-Type': 'application/json',
-                ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {})
-            };
-        },
-
-        async request(method, endpoint, data = null) {
-            const url = `${this.baseURL}${endpoint}`;
-            const options = {
-                method,
-                headers: this.getHeaders()
-            };
-
-            if (data) {
-                options.body = JSON.stringify(data);
-            }
-
-            const response = await fetch(url, options);
-            const result = await response.json();
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    this.setToken(null);
-                    window.location.reload();
+        // ============================================================
+        // API CLIENT (unchanged)
+        // ============================================================
+        const API = {
+            baseURL: '/api',
+            token: localStorage.getItem('token') || null,
+            setToken(token) {
+                this.token = token;
+                token ? localStorage.setItem('token', token) : localStorage.removeItem('token');
+            },
+            getHeaders() {
+                return {
+                    'Content-Type': 'application/json',
+                    ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {})
+                };
+            },
+            async request(method, endpoint, data = null) {
+                const url = `${this.baseURL}${endpoint}`;
+                const options = { method, headers: this.getHeaders() };
+                if (data) options.body = JSON.stringify(data);
+                const response = await fetch(url, options);
+                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) { this.setToken(null); window.location.reload(); }
+                    throw new Error(result.error || result.message || 'Request failed');
                 }
-                throw new Error(result.error || result.message || 'Request failed');
-            }
-
-            return result;
-        },
-
-        // Auth
-        login(username, password) {
-            return this.request('POST', '/auth/login', { username, password });
-        },
-        register(userData) {
-            return this.request('POST', '/auth/register', userData);
-        },
-
-        // Items
-        getItems(params = {}) {
-            const query = new URLSearchParams(params).toString();
-            return this.request('GET', `/items?${query}`);
-        },
-        getItem(id) {
-            return this.request('GET', `/items/${id}`);
-        },
-        createItem(data) {
-            return this.request('POST', '/items', data);
-        },
-        updateItem(id, data) {
-            return this.request('PUT', `/items/${id}`, data);
-        },
-        deleteItem(id) {
-            return this.request('DELETE', `/items/${id}`);
-        },
-
-        // Transactions
-        getTransactions(params = {}) {
-            const query = new URLSearchParams(params).toString();
-            return this.request('GET', `/transactions?${query}`);
-        },
-        createTransaction(data) {
-            return this.request('POST', '/transactions', data);
-        },
-        getItemTransactions(itemId) {
-            return this.request('GET', `/items/${itemId}/transactions`);
-        },
-
-        // Dashboard
-        getDashboardStats() {
-            return this.request('GET', '/dashboard/stats');
-        },
-
-        // Categories
-        getCategories() {
-            return this.request('GET', '/categories');
-        },
-        createCategory(data) {
-            return this.request('POST', '/categories', data);
-        },
-
-        // Suppliers
-        getSuppliers() {
-            return this.request('GET', '/suppliers');
-        },
-        createSupplier(data) {
-            return this.request('POST', '/suppliers', data);
-        },
-
-        // Reports
-        getTopItems(limit = 10) {
-            return this.request('GET', `/reports/top-items?limit=${limit}`);
-        },
-        getMonthlySummary(year) {
-            return this.request('GET', `/reports/monthly-summary${year ? `?year=${year}` : ''}`);
-        },
-        getLowStock() {
-            return this.request('GET', '/reports/low-stock');
-        },
-
-        // Users
-        getUsers() {
-            return this.request('GET', '/users');
-        }
-    };
-
-    // ============================================================
-    // TOAST NOTIFICATIONS
-    // ============================================================
-    function showToast(message, type = 'success') {
-        const container = document.querySelector('.toast-container');
-        const colors = {
-            success: 'bg-success',
-            error: 'bg-danger',
-            warning: 'bg-warning',
-            info: 'bg-info'
+                return result;
+            },
+            login(username, password) { return this.request('POST', '/auth/login', { username, password }); },
+            register(data) { return this.request('POST', '/auth/register', data); },
+            getItems(params = {}) {
+                const query = new URLSearchParams(params).toString();
+                return this.request('GET', `/items?${query}`);
+            },
+            getItem(id) { return this.request('GET', `/items/${id}`); },
+            createItem(data) { return this.request('POST', '/items', data); },
+            updateItem(id, data) { return this.request('PUT', `/items/${id}`, data); },
+            deleteItem(id) { return this.request('DELETE', `/items/${id}`); },
+            getTransactions(params = {}) {
+                const query = new URLSearchParams(params).toString();
+                return this.request('GET', `/transactions?${query}`);
+            },
+            createTransaction(data) { return this.request('POST', '/transactions', data); },
+            getItemTransactions(itemId) { return this.request('GET', `/items/${itemId}/transactions`); },
+            getDashboardStats() { return this.request('GET', '/dashboard/stats'); },
+            getCategories() { return this.request('GET', '/categories'); },
+            createCategory(data) { return this.request('POST', '/categories', data); },
+            getSuppliers() { return this.request('GET', '/suppliers'); },
+            createSupplier(data) { return this.request('POST', '/suppliers', data); },
+            getTopItems(limit = 10) { return this.request('GET', `/reports/top-items?limit=${limit}`); },
+            getMonthlySummary(year) { return this.request('GET', `/reports/monthly-summary${year ? `?year=${year}` : ''}`); },
+            getLowStock() { return this.request('GET', '/reports/low-stock'); },
+            getUsers() { return this.request('GET', '/users'); }
         };
 
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white ${colors[type] || colors.info} border-0 show`;
-        toast.role = 'alert';
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
-        container.appendChild(toast);
-
-        setTimeout(() => {
-            toast.remove();
-        }, 5000);
-    }
-
-    // ============================================================
-    // MAIN APPLICATION
-    // ============================================================
-    class StoreInventorySystem {
-        constructor() {
-            this.isAuthenticated = !!API.token;
-            this.currentView = 'dashboard';
-            this.items = [];
-            this.transactions = [];
-            this.categories = [];
-            this.suppliers = [];
-            this.editItemId = null;
-            this.searchQuery = '';
-            this.filterCategory = 'all';
-            this.filterStatus = 'all';
-            this.transactionFilter = 'all';
-            this.sortField = 'id';
-            this.sortDirection = 'asc';
-            this.itemsPerPage = 15;
-            this.currentPage = 1;
-            this.totalItems = 0;
-            this.totalPages = 1;
-            this.user = null;
-
-            this.initUI();
-            this.checkAuth();
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                success: 'bg-success',
+                error: 'bg-danger',
+                warning: 'bg-warning',
+                info: 'bg-info'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white ${colors[type] || colors.info} border-0 show`;
+            toast.role = 'alert';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
         }
 
-        initUI() {
-            const app = document.getElementById('app');
-            if (!app) {
-                document.body.innerHTML = `
-                    <div id="app">
-                        <div id="content"></div>
+        // ============================================================
+        // MAIN APPLICATION
+        // ============================================================
+        class StoreInventorySystem {
+            constructor() {
+                this.isAuthenticated = !!API.token;
+                this.currentView = 'dashboard';
+                this.items = [];
+                this.transactions = [];
+                this.categories = [];
+                this.suppliers = [];
+                this.editItemId = null;
+                this.searchQuery = '';
+                this.filterCategory = 'all';
+                this.filterStatus = 'all';
+                this.transactionFilter = 'all';
+                this.sortField = 'id';
+                this.sortDirection = 'asc';
+                this.itemsPerPage = 15;
+                this.currentPage = 1;
+                this.totalItems = 0;
+                this.totalPages = 1;
+                this.user = null;
+                this.chartInstance = null;
+
+                this.content = document.getElementById('content');
+                this.pageTitle = document.getElementById('pageTitle');
+                this.topbar = document.getElementById('topbar');
+                this.sidebar = document.getElementById('sidebar');
+                this.initUI();
+                this.checkAuth();
+            }
+
+            initUI() {
+                // Hamburger toggle
+                document.getElementById('hamburgerBtn').addEventListener('click', () => {
+                    this.sidebar.classList.toggle('open');
+                });
+                // Close sidebar on link click (mobile)
+                document.querySelectorAll('#sidebarNav .nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 992) {
+                            this.sidebar.classList.remove('open');
+                        }
+                    });
+                });
+                // Nav clicks
+                document.querySelectorAll('#sidebarNav .nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const view = link.dataset.view;
+                        this.switchView(view);
+                        document.querySelectorAll('#sidebarNav .nav-link').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                    });
+                });
+            }
+
+            checkAuth() {
+                if (this.isAuthenticated) {
+                    this.showAuthenticatedUI();
+                    this.loadDashboard();
+                    this.updateUserInfo();
+                } else {
+                    this.showLoginUI();
+                }
+            }
+
+            showAuthenticatedUI() {
+                this.sidebar.style.display = 'flex';
+                this.topbar.style.display = 'flex';
+                // Ensure content is visible
+                this.content.style.display = 'block';
+            }
+
+            showLoginUI() {
+                this.sidebar.style.display = 'none';
+                this.topbar.style.display = 'none';
+                this.content.style.display = 'block';
+                this.content.innerHTML = `
+                    <div class="login-wrapper">
+                        <div class="login-box">
+                            <h3 class="text-center"><i class="fas fa-industry brand-icon"></i> Amhara Metal</h3>
+                            <p class="text-center text-muted">Inventory Management System</p>
+                            <hr />
+                            <form id="loginForm" onsubmit="inventorySystem.handleLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="loginUsername" value="admin" required />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" value="admin123" required />
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100">
+                                    <i class="fas fa-sign-in-alt"></i> Login
+                                </button>
+                            </form>
+                            <hr />
+                            <p class="text-center text-muted small">Default: admin / admin123</p>
+                        </div>
                     </div>
                 `;
+                this.pageTitle.textContent = 'Login';
             }
-            this.content = document.getElementById('content');
-        }
 
-        checkAuth() {
-            if (this.isAuthenticated) {
-                this.loadDashboard();
-                this.renderNav();
-            } else {
-                this.renderLogin();
+            async handleLogin(e) {
+                e.preventDefault();
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                try {
+                    const result = await API.login(username, password);
+                    API.setToken(result.token);
+                    this.isAuthenticated = true;
+                    this.user = result.user;
+                    showToast('Login successful!', 'success');
+                    this.showAuthenticatedUI();
+                    this.loadDashboard();
+                    this.updateUserInfo();
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
             }
-        }
 
-        renderNav() {
-            const nav = document.createElement('nav');
-            nav.className = 'navbar navbar-expand-lg navbar-dark bg-primary sticky-top';
-            nav.innerHTML = `
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="#">
-                        <i class="fas fa-warehouse"></i> Amhara Metal - Inventory
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navMenu">
-                        <ul class="navbar-nav me-auto" id="navMenuItems">
-                            <li class="nav-item"><a class="nav-link active" data-view="dashboard" href="#"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" data-view="inventory" href="#"><i class="fas fa-boxes"></i> Inventory</a></li>
-                            <li class="nav-item"><a class="nav-link" data-view="transactions" href="#"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
-                            <li class="nav-item"><a class="nav-link" data-view="report" href="#"><i class="fas fa-file-alt"></i> Reports</a></li>
-                        </ul>
-                        <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <span class="nav-link text-light" style="opacity:0.7">
-                                    <i class="fas fa-user"></i> ${this.user?.fullName || 'User'}
-                                </span>
-                            </li>
-                            <li class="nav-item">
-                                <button class="btn btn-outline-light btn-sm" onclick="inventorySystem.logout()">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-
-            // Insert nav after app
-            const app = document.getElementById('app');
-            app.insertBefore(nav, app.firstChild);
-
-            // Setup nav click events
-            document.querySelectorAll('[data-view]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const view = link.dataset.view;
-                    this.switchView(view);
-                    document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                });
-            });
-
-            this.nav = nav;
-        }
-
-        renderLogin() {
-            this.content.innerHTML = `
-                <div class="login-container">
-                    <h3><i class="fas fa-warehouse text-primary"></i> Store Inventory System</h3>
-                    <p class="text-muted text-center">Amhara Metal Industry & Technology Development</p>
-                    <hr>
-                    <form id="loginForm" onsubmit="inventorySystem.handleLogin(event)">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" id="loginUsername" value="admin" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" value="admin123" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-sign-in-alt"></i> Login
-                        </button>
-                    </form>
-                    <hr>
-                    <p class="text-muted text-center small">Default: admin / admin123</p>
-                </div>
-            `;
-        }
-
-        async handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                const result = await API.login(username, password);
-                API.setToken(result.token);
-                this.isAuthenticated = true;
-                this.user = result.user;
-                showToast('Login successful!', 'success');
-                this.checkAuth();
-            } catch (error) {
-                showToast(error.message, 'error');
+            logout() {
+                API.setToken(null);
+                this.isAuthenticated = false;
+                this.user = null;
+                this.showLoginUI();
+                showToast('Logged out', 'info');
             }
-        }
 
-        logout() {
-            API.setToken(null);
-            this.isAuthenticated = false;
-            this.user = null;
-            this.content.innerHTML = '';
-            if (this.nav) this.nav.remove();
-            this.renderLogin();
-            showToast('Logged out successfully', 'info');
-        }
-
-        switchView(view) {
-            this.currentView = view;
-            this.content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
-            switch (view) {
-                case 'dashboard': this.loadDashboard(); break;
-                case 'inventory': this.loadInventory(); break;
-                case 'transactions': this.loadTransactions(); break;
-                case 'report': this.loadReport(); break;
-                default: this.loadDashboard();
+            updateUserInfo() {
+                const avatar = document.getElementById('userAvatar');
+                const nameSpan = document.getElementById('userName');
+                if (this.user) {
+                    avatar.textContent = this.user.fullName ? this.user.fullName.charAt(0).toUpperCase() : 'U';
+                    nameSpan.textContent = this.user.fullName || this.user.username || 'User';
+                }
             }
-        }
 
-        // ==================== DASHBOARD ====================
-        async loadDashboard() {
-            try {
-                const stats = await API.getDashboardStats();
+            switchView(view) {
+                this.currentView = view;
+                const titles = {
+                    dashboard: 'Dashboard',
+                    inventory: 'Inventory Management',
+                    transactions: 'Transaction History',
+                    report: 'Reports & Analytics'
+                };
+                this.pageTitle.innerHTML = `<i class="fas ${view === 'dashboard' ? 'fa-chart-pie' : view === 'inventory' ? 'fa-boxes' : view === 'transactions' ? 'fa-exchange-alt' : 'fa-file-alt'}"></i> ${titles[view] || 'Dashboard'}`;
+                this.content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+                switch (view) {
+                    case 'dashboard': this.loadDashboard(); break;
+                    case 'inventory': this.loadInventory(); break;
+                    case 'transactions': this.loadTransactions(); break;
+                    case 'report': this.loadReport(); break;
+                    default: this.loadDashboard();
+                }
+            }
 
-                this.content.innerHTML = `
-                    <div class="container-fluid mt-3">
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h4><i class="fas fa-chart-pie text-primary"></i> Dashboard Overview</h4>
-                                <p class="text-muted">Real-time inventory status and summary</p>
+            // ─── DASHBOARD ─────────────────────────────────────────
+            async loadDashboard() {
+                try {
+                    const stats = await API.getDashboardStats();
+                    this.content.innerHTML = `
+                        <div class="stat-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-cubes"></i></div>
+                                <div class="stat-label">Total Items</div>
+                                <div class="stat-number">${stats.totalItems}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                                <div class="stat-label">Total Value (Birr)</div>
+                                <div class="stat-number">${Number(stats.totalValue).toLocaleString()}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="stat-label">Low Stock Items</div>
+                                <div class="stat-number text-danger">${stats.lowStockItems}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+                                <div class="stat-label">Recent Transactions</div>
+                                <div class="stat-number">${stats.recentTransactions?.length || 0}</div>
                             </div>
                         </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="stat-number">${stats.totalItems}</div>
-                                            <div class="stat-label">Total Items</div>
-                                        </div>
-                                        <div class="stat-icon text-primary"><i class="fas fa-cubes"></i></div>
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <div class="panel">
+                                    <div class="panel-header">
+                                        <h5><i class="fas fa-chart-line"></i> Monthly Trends</h5>
                                     </div>
+                                    <canvas id="monthlyChart" height="200"></canvas>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="stat-number">${Number(stats.totalValue).toLocaleString()}</div>
-                                            <div class="stat-label">Total Value (Birr)</div>
-                                        </div>
-                                        <div class="stat-icon text-success"><i class="fas fa-money-bill-wave"></i></div>
+                            <div class="col-lg-5">
+                                <div class="panel">
+                                    <div class="panel-header">
+                                        <h5><i class="fas fa-list"></i> Category Breakdown</h5>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="stat-number text-danger">${stats.lowStockItems}</div>
-                                            <div class="stat-label">Low Stock Items</div>
-                                        </div>
-                                        <div class="stat-icon text-warning"><i class="fas fa-exclamation-triangle"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="stat-number">${stats.recentTransactions?.length || 0}</div>
-                                            <div class="stat-label">Recent Transactions</div>
-                                        </div>
-                                        <div class="stat-icon text-info"><i class="fas fa-exchange-alt"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-2">
-                            <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-list"></i> Category Breakdown</h6>
-                                    <table class="table table-sm mb-0">
-                                        <tbody>
-                                            ${(stats.categoryBreakdown || []).map(cat => `
-                                                <tr>
-                                                    <td><span class="badge badge-${cat.category}">${cat.category.replace('_', ' ').toUpperCase()}</span></td>
-                                                    <td class="text-end">${cat.count} items</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-circle"></i> Status Breakdown</h6>
-                                    <table class="table table-sm mb-0">
-                                        <tbody>
-                                            ${(stats.statusBreakdown || []).map(st => `
-                                                <tr>
-                                                    <td><span class="badge badge-${st.status}">${st.status || 'Active'}</span></td>
-                                                    <td class="text-end">${st.count} items</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-2">
-                            <div class="col-12">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-history"></i> Recent Transactions</h6>
-                                    <div class="table-responsive">
+                                    <div class="table-wrap">
                                         <table class="table table-sm mb-0">
-                                            <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Description</th></tr></thead>
                                             <tbody>
-                                                ${(stats.recentTransactions || []).map(txn => `
-                                                    <tr>
-                                                        <td>${new Date(txn.created_at).toLocaleDateString()}</td>
-                                                        <td>${txn.item_name}</td>
-                                                        <td><span class="badge badge-${txn.type.toLowerCase()}">${txn.type}</span></td>
-                                                        <td>${txn.quantity}</td>
-                                                        <td>${txn.description || '-'}</td>
-                                                    </tr>
+                                                ${(stats.categoryBreakdown || []).map(cat => `
+                                                    <tr><td><span class="badge-cat ${cat.category}">${cat.category.replace('_',' ').toUpperCase()}</span></td>
+                                                    <td class="text-end">${cat.count} items</td></tr>
                                                 `).join('')}
-                                                ${(!stats.recentTransactions || stats.recentTransactions.length === 0) ? `
-                                                    <tr><td colspan="5" class="text-center text-muted">No transactions found</td></tr>
-                                                ` : ''}
+                                                ${(!stats.categoryBreakdown || stats.categoryBreakdown.length === 0) ? '<tr><td colspan="2" class="text-muted">No categories</td></tr>' : ''}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            } catch (error) {
-                showToast(error.message, 'error');
-                this.content.innerHTML = `<div class="alert alert-danger">Error loading dashboard: ${error.message}</div>`;
-            }
-        }
 
-        // ==================== INVENTORY ====================
-        async loadInventory() {
-            try {
-                const params = {
-                    page: this.currentPage,
-                    limit: this.itemsPerPage,
-                    sort: this.sortField,
-                    order: this.sortDirection === 'asc' ? 'ASC' : 'DESC'
-                };
-
-                if (this.searchQuery) params.search = this.searchQuery;
-                if (this.filterCategory !== 'all') params.category = this.filterCategory;
-                if (this.filterStatus !== 'all') params.status = this.filterStatus;
-
-                const result = await API.getItems(params);
-                this.items = result.items;
-                this.totalItems = result.pagination.total;
-                this.totalPages = result.pagination.pages;
-
-                // Get categories for filter
-                const categories = await API.getCategories();
-                const catNames = categories.map(c => c.name);
-
-                // Get statuses from items
-                const statuses = [...new Set(this.items.map(i => i.status || 'active'))];
-
-                // Build the HTML (same as before but using API data)
-                this.renderInventoryTable(catNames, statuses);
-            } catch (error) {
-                showToast(error.message, 'error');
-                this.content.innerHTML = `<div class="alert alert-danger">Error loading inventory: ${error.message}</div>`;
-            }
-        }
-
-        renderInventoryTable(categories, statuses) {
-            const start = (this.currentPage - 1) * this.itemsPerPage;
-
-            this.content.innerHTML = `
-                <div class="container-fluid mt-3">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4><i class="fas fa-boxes text-primary"></i> Inventory Management</h4>
-                                <div>
-                                    <button class="btn btn-success btn-sm" onclick="inventorySystem.openAddItemModal()">
-                                        <i class="fas fa-plus"></i> Add Item
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="inventorySystem.exportInventory()">
-                                        <i class="fas fa-file-export"></i> Export
-                                    </button>
-                                </div>
+                        <div class="panel mt-4">
+                            <div class="panel-header">
+                                <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                            </div>
+                            <div class="table-wrap">
+                                <table class="table-custom">
+                                    <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Description</th></tr></thead>
+                                    <tbody>
+                                        ${(stats.recentTransactions || []).map(txn => `
+                                            <tr>
+                                                <td>${new Date(txn.created_at).toLocaleDateString()}</td>
+                                                <td><strong>${txn.item_name}</strong></td>
+                                                <td><span class="badge-cat ${txn.type.toLowerCase()}">${txn.type}</span></td>
+                                                <td>${txn.quantity}</td>
+                                                <td>${txn.description || '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                        ${(!stats.recentTransactions || stats.recentTransactions.length === 0) ? `<tr><td colspan="5" class="text-center text-muted">No transactions</td></tr>` : ''}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </div>
+                    `;
+                    // Render chart
+                    this.renderMonthlyChart(stats.monthlySummary || []);
+                } catch (error) {
+                    showToast(error.message, 'error');
+                    this.content.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                }
+            }
 
-                    <div class="row g-2 mb-3">
+            renderMonthlyChart(data) {
+                const canvas = document.getElementById('monthlyChart');
+                if (!canvas) return;
+                if (this.chartInstance) this.chartInstance.destroy();
+                const ctx = canvas.getContext('2d');
+                const labels = data.map(d => d.month);
+                const stockIn = data.map(d => d.stock_in || 0);
+                const stockOut = data.map(d => d.stock_out || 0);
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'Stock In', data: stockIn, backgroundColor: '#1e3a5f', borderRadius: 4 },
+                            { label: 'Stock Out', data: stockOut, backgroundColor: '#f9b43a', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            // ─── INVENTORY ──────────────────────────────────────────
+            async loadInventory() {
+                try {
+                    const params = {
+                        page: this.currentPage,
+                        limit: this.itemsPerPage,
+                        sort: this.sortField,
+                        order: this.sortDirection === 'asc' ? 'ASC' : 'DESC'
+                    };
+                    if (this.searchQuery) params.search = this.searchQuery;
+                    if (this.filterCategory !== 'all') params.category = this.filterCategory;
+                    if (this.filterStatus !== 'all') params.status = this.filterStatus;
+
+                    const result = await API.getItems(params);
+                    this.items = result.items;
+                    this.totalItems = result.pagination.total;
+                    this.totalPages = result.pagination.pages;
+
+                    const categories = await API.getCategories();
+                    const catNames = categories.map(c => c.name);
+                    const statuses = [...new Set(this.items.map(i => i.status || 'active'))];
+
+                    this.renderInventoryTable(catNames, statuses);
+                } catch (error) {
+                    showToast(error.message, 'error');
+                    this.content.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                }
+            }
+
+            renderInventoryTable(categories, statuses) {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                this.content.innerHTML = `
+                    <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <div class="search-wrapper">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" class="form-control" id="inventorySearch" 
-                                       placeholder="Search items..." value="${this.searchQuery}"
-                                       oninput="inventorySystem.onSearch(this.value)">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" class="form-control border-start-0" id="inventorySearch"
+                                    placeholder="Search by name or ID..." value="${this.searchQuery}"
+                                    oninput="inventorySystem.onSearch(this.value)" />
                             </div>
                         </div>
                         <div class="col-md-3">
                             <select class="form-select" id="categoryFilter" onchange="inventorySystem.onCategoryFilter(this.value)">
                                 <option value="all">All Categories</option>
-                                ${categories.map(cat => `
-                                    <option value="${cat}" ${this.filterCategory === cat ? 'selected' : ''}>
-                                        ${cat.replace('_', ' ').toUpperCase()}
-                                    </option>
-                                `).join('')}
+                                ${categories.map(c => `<option value="${c}" ${this.filterCategory === c ? 'selected' : ''}>${c.replace('_',' ').toUpperCase()}</option>`).join('')}
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select class="form-select" id="statusFilter" onchange="inventorySystem.onStatusFilter(this.value)">
                                 <option value="all">All Status</option>
-                                ${statuses.map(status => `
-                                    <option value="${status}" ${this.filterStatus === status ? 'selected' : ''}>
-                                        ${status || 'Active'}
-                                    </option>
-                                `).join('')}
+                                ${statuses.map(s => `<option value="${s}" ${this.filterStatus === s ? 'selected' : ''}>${s || 'Active'}</option>`).join('')}
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <select class="form-select" id="sortSelect" onchange="inventorySystem.onSort(this.value)">
-                                <option value="id">Sort by ID</option>
-                                <option value="name">Sort by Name</option>
-                                <option value="quantity">Sort by Qty</option>
-                                <option value="total_price">Sort by Value</option>
-                            </select>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-primary-custom btn-sm" onclick="inventorySystem.openAddItemModal()">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                            <button class="btn btn-outline-custom btn-sm" onclick="inventorySystem.exportInventory()">
+                                <i class="fas fa-file-export"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width:60px">ID</th>
-                                    <th>Item Name</th>
-                                    <th style="width:70px">Unit</th>
-                                    <th style="width:70px">Qty</th>
-                                    <th style="width:100px">Unit Price</th>
-                                    <th style="width:110px">Total Value</th>
-                                    <th style="width:110px">Category</th>
-                                    <th style="width:90px">Status</th>
-                                    <th style="width:180px">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${this.items.length > 0 ? this.items.map(item => `
+                    <div class="panel">
+                        <div class="table-wrap">
+                            <table class="table-custom">
+                                <thead>
                                     <tr>
-                                        <td>${item.id}</td>
-                                        <td><strong class="text-truncate-2">${item.name}</strong></td>
-                                        <td>${item.unit}</td>
-                                        <td class="${item.quantity <= (item.min_stock_level || 5) && item.quantity > 0 ? 'text-danger fw-bold' : ''}">${item.quantity}</td>
-                                        <td>${Number(item.unit_price).toFixed(2)}</td>
-                                        <td>${Number(item.total_price || item.quantity * item.unit_price).toFixed(2)}</td>
-                                        <td><span class="badge badge-${item.category}">${item.category.replace('_', ' ').toUpperCase()}</span></td>
-                                        <td><span class="badge badge-${item.status || 'active'}">${item.status || 'Active'}</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="inventorySystem.editItem(${item.id})" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-success btn-action" onclick="inventorySystem.stockIn(${item.id})" title="Stock In">
-                                                <i class="fas fa-arrow-down"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-warning btn-action" onclick="inventorySystem.stockOut(${item.id})" title="Stock Out">
-                                                <i class="fas fa-arrow-up"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="inventorySystem.deleteItem(${item.id})" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
+                                        <th>ID</th><th>Name</th><th>Unit</th><th>Qty</th>
+                                        <th>Unit Price</th><th>Total Value</th><th>Category</th><th>Status</th>
+                                        <th style="width:160px;">Actions</th>
                                     </tr>
-                                `).join('') : `
-                                    <tr><td colspan="9" class="text-center text-muted py-4">No items found matching your criteria</td></tr>
-                                `}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    ${this.totalPages > 1 ? `
-                        <nav class="mt-3">
-                            <ul class="pagination justify-content-center">
-                                <li class="page-item ${this.currentPage <= 1 ? 'disabled' : ''}">
-                                    <a class="page-link" onclick="inventorySystem.goToPage(${this.currentPage - 1})">Previous</a>
-                                </li>
-                                ${Array.from({length: Math.min(this.totalPages, 8)}, (_, i) => {
-                                    const page = i + 1;
-                                    return `<li class="page-item ${page === this.currentPage ? 'active' : ''}">
-                                        <a class="page-link" onclick="inventorySystem.goToPage(${page})">${page}</a>
-                                    </li>`;
-                                }).join('')}
-                                ${this.totalPages > 8 ? `<li class="page-item disabled"><span class="page-link">...</span></li>` : ''}
-                                <li class="page-item ${this.currentPage >= this.totalPages ? 'disabled' : ''}">
-                                    <a class="page-link" onclick="inventorySystem.goToPage(${this.currentPage + 1})">Next</a>
-                                </li>
-                            </ul>
-                        </nav>
-                        <p class="text-center text-muted small">Showing ${start + 1} - ${Math.min(start + this.itemsPerPage, this.totalItems)} of ${this.totalItems} items</p>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        onSearch(query) { this.searchQuery = query; this.currentPage = 1; this.loadInventory(); }
-        onCategoryFilter(value) { this.filterCategory = value; this.currentPage = 1; this.loadInventory(); }
-        onStatusFilter(value) { this.filterStatus = value; this.currentPage = 1; this.loadInventory(); }
-        onSort(value) { this.sortField = value; this.loadInventory(); }
-        goToPage(page) { this.currentPage = page; this.loadInventory(); }
-
-        // ==================== TRANSACTIONS ====================
-        async loadTransactions() {
-            try {
-                const params = { page: 1, limit: 100 };
-                if (this.transactionFilter !== 'all') params.type = this.transactionFilter;
-
-                const result = await API.getTransactions(params);
-                this.transactions = result.transactions;
-
-                this.content.innerHTML = `
-                    <div class="container-fluid mt-3">
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <h4><i class="fas fa-exchange-alt text-primary"></i> Transaction History</h4>
-                                    <button class="btn btn-primary btn-sm" onclick="inventorySystem.openTransactionModal()">
-                                        <i class="fas fa-plus"></i> New Transaction
-                                    </button>
-                                </div>
-                            </div>
+                                </thead>
+                                <tbody>
+                                    ${this.items.length > 0 ? this.items.map(item => `
+                                        <tr>
+                                            <td>${item.id}</td>
+                                            <td><strong class="text-truncate-2" style="max-width:180px;">${item.name}</strong></td>
+                                            <td>${item.unit}</td>
+                                            <td class="${item.quantity <= (item.min_stock_level || 5) && item.quantity > 0 ? 'text-danger fw-bold' : ''}">${item.quantity}</td>
+                                            <td>${Number(item.unit_price).toFixed(2)}</td>
+                                            <td>${Number(item.total_price || item.quantity * item.unit_price).toFixed(2)}</td>
+                                            <td><span class="badge-cat ${item.category}">${item.category.replace('_',' ').toUpperCase()}</span></td>
+                                            <td><span class="badge-cat ${item.status || 'active'}">${item.status || 'Active'}</span></td>
+                                            <td>
+                                                <button class="btn-icon-sm" onclick="inventorySystem.editItem(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn-icon-sm success" onclick="inventorySystem.stockIn(${item.id})" title="Stock In"><i class="fas fa-arrow-down"></i></button>
+                                                <button class="btn-icon-sm warning" onclick="inventorySystem.stockOut(${item.id})" title="Stock Out"><i class="fas fa-arrow-up"></i></button>
+                                                <button class="btn-icon-sm danger" onclick="inventorySystem.deleteItem(${item.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr><td colspan="9" class="text-center text-muted py-4">No items found</td></tr>
+                                    `}
+                                </tbody>
+                            </table>
                         </div>
+                        ${this.totalPages > 1 ? `
+                            <nav class="mt-3">
+                                <ul class="pagination pagination-custom justify-content-center">
+                                    <li class="page-item ${this.currentPage <= 1 ? 'disabled' : ''}">
+                                        <a class="page-link" onclick="inventorySystem.goToPage(${this.currentPage - 1})">Previous</a>
+                                    </li>
+                                    ${Array.from({length: Math.min(this.totalPages, 8)}, (_, i) => {
+                                        const p = i + 1;
+                                        return `<li class="page-item ${p === this.currentPage ? 'active' : ''}">
+                                            <a class="page-link" onclick="inventorySystem.goToPage(${p})">${p}</a>
+                                        </li>`;
+                                    }).join('')}
+                                    ${this.totalPages > 8 ? `<li class="page-item disabled"><span class="page-link">…</span></li>` : ''}
+                                    <li class="page-item ${this.currentPage >= this.totalPages ? 'disabled' : ''}">
+                                        <a class="page-link" onclick="inventorySystem.goToPage(${this.currentPage + 1})">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            <p class="text-center text-muted small">Showing ${start + 1} – ${Math.min(start + this.itemsPerPage, this.totalItems)} of ${this.totalItems}</p>
+                        ` : ''}
+                    </div>
+                `;
+            }
 
-                        <div class="row mb-3">
+            // ─── TRANSACTIONS ──────────────────────────────────────
+            async loadTransactions() {
+                try {
+                    const params = { page: 1, limit: 100 };
+                    if (this.transactionFilter !== 'all') params.type = this.transactionFilter;
+                    const result = await API.getTransactions(params);
+                    this.transactions = result.transactions;
+
+                    this.content.innerHTML = `
+                        <div class="row g-3 mb-3 align-items-center">
                             <div class="col-md-3">
                                 <select class="form-select" id="txnFilter" onchange="inventorySystem.onTxnFilter(this.value)">
                                     <option value="all" ${this.transactionFilter === 'all' ? 'selected' : ''}>All Transactions</option>
@@ -700,489 +931,364 @@
                                 </select>
                             </div>
                             <div class="col-md-9 text-end">
-                                <span class="text-muted small">Total: ${this.transactions.length} transactions</span>
+                                <button class="btn btn-primary-custom btn-sm" onclick="inventorySystem.openTransactionModal()">
+                                    <i class="fas fa-plus"></i> New Transaction
+                                </button>
                             </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th style="width:50px">ID</th>
-                                        <th style="width:110px">Date</th>
-                                        <th>Item</th>
-                                        <th style="width:70px">Type</th>
-                                        <th style="width:70px">Qty</th>
-                                        <th style="width:60px">Unit</th>
-                                        <th style="width:90px">Unit Price</th>
-                                        <th style="width:100px">Total</th>
-                                        <th>Description</th>
-                                        <th style="width:120px">Performed By</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${this.transactions.length > 0 ? this.transactions.map(txn => `
-                                        <tr>
-                                            <td>${txn.id}</td>
-                                            <td>${new Date(txn.created_at).toLocaleDateString()}</td>
-                                            <td><strong>${txn.item_name}</strong></td>
-                                            <td><span class="badge badge-${txn.type.toLowerCase()}">${txn.type}</span></td>
-                                            <td class="${txn.type === 'IN' ? 'text-success' : 'text-warning'} fw-bold">${txn.quantity}</td>
-                                            <td>${txn.unit}</td>
-                                            <td>${Number(txn.unit_price).toFixed(2)}</td>
-                                            <td>${Number(txn.total_price).toFixed(2)}</td>
-                                            <td>${txn.description || '-'}</td>
-                                            <td>${txn.performed_by || '-'}</td>
-                                        </tr>
-                                    `).join('') : `
-                                        <tr><td colspan="10" class="text-center text-muted py-4">No transactions found</td></tr>
-                                    `}
-                                </tbody>
-                            </table>
+                        <div class="panel">
+                            <div class="table-wrap">
+                                <table class="table-custom">
+                                    <thead><tr><th>ID</th><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Total</th><th>Description</th><th>By</th></tr></thead>
+                                    <tbody>
+                                        ${this.transactions.length > 0 ? this.transactions.map(t => `
+                                            <tr>
+                                                <td>${t.id}</td>
+                                                <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                                                <td><strong>${t.item_name}</strong></td>
+                                                <td><span class="badge-cat ${t.type.toLowerCase()}">${t.type}</span></td>
+                                                <td class="${t.type === 'IN' ? 'text-success' : 'text-warning'} fw-bold">${t.quantity}</td>
+                                                <td>${t.unit}</td>
+                                                <td>${Number(t.unit_price).toFixed(2)}</td>
+                                                <td>${Number(t.total_price).toFixed(2)}</td>
+                                                <td>${t.description || '-'}</td>
+                                                <td>${t.performed_by || '-'}</td>
+                                            </tr>
+                                        `).join('') : `
+                                            <tr><td colspan="10" class="text-center text-muted py-4">No transactions found</td></tr>
+                                        `}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            }
+
+            // ─── MODALS (unchanged logic, but styles updated) ────
+            openAddItemModal() {
+                this.editItemId = null;
+                this.showModal('Add New Item', `
+                    <form id="itemForm">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">Item Name *</label><input type="text" class="form-control" id="itemName" required /></div>
+                            <div class="col-md-3"><label class="form-label">Unit *</label>
+                                <select class="form-select" id="itemUnit">${['pcs','kg','meter','liter','gallon','roll','packet','set','ton','mm'].map(u => `<option value="${u}">${u}</option>`).join('')}</select>
+                            </div>
+                            <div class="col-md-3"><label class="form-label">Quantity *</label><input type="number" class="form-control" id="itemQty" value="0" min="0" required /></div>
+                            <div class="col-md-4"><label class="form-label">Unit Price (Birr) *</label><input type="number" class="form-control" id="itemPrice" value="0" min="0" step="0.01" required /></div>
+                            <div class="col-md-4"><label class="form-label">Category *</label>
+                                <select class="form-select" id="itemCategory">${['raw_material','fixed_asset','consumable'].map(c => `<option value="${c}">${c.replace('_',' ').toUpperCase()}</option>`).join('')}</select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label">Status</label>
+                                <select class="form-select" id="itemStatus"><option value="active">Active</option><option value="inactive">Inactive</option><option value="used">Used</option><option value="damaged">Damaged</option></select>
+                            </div>
+                            <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" id="itemDesc" rows="2"></textarea></div>
+                        </div>
+                    </form>
+                `, () => this.saveItem());
+            }
+
+            async saveItem() {
+                const name = document.getElementById('itemName').value.trim();
+                const unit = document.getElementById('itemUnit').value;
+                const quantity = parseFloat(document.getElementById('itemQty').value) || 0;
+                const unitPrice = parseFloat(document.getElementById('itemPrice').value) || 0;
+                const category = document.getElementById('itemCategory').value;
+                const status = document.getElementById('itemStatus').value;
+                const description = document.getElementById('itemDesc').value.trim();
+                if (!name) { showToast('Please enter a name.', 'error'); return; }
+                try {
+                    await API.createItem({ name, unit, quantity, unitPrice, category, status, description });
+                    this.closeModal();
+                    this.loadInventory();
+                    showToast(`Item "${name}" added!`, 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            async editItem(id) {
+                try {
+                    const item = await API.getItem(id);
+                    this.editItemId = id;
+                    this.showModal(`Edit Item #${id}`, `
+                        <form id="editItemForm">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Name *</label><input type="text" class="form-control" id="editItemName" value="${item.name}" required /></div>
+                                <div class="col-md-3"><label class="form-label">Unit *</label>
+                                    <select class="form-select" id="editItemUnit">${['pcs','kg','meter','liter','gallon','roll','packet','set','ton','mm'].map(u => `<option value="${u}" ${u===item.unit?'selected':''}>${u}</option>`).join('')}</select>
+                                </div>
+                                <div class="col-md-3"><label class="form-label">Quantity *</label><input type="number" class="form-control" id="editItemQty" value="${item.quantity}" min="0" required /></div>
+                                <div class="col-md-4"><label class="form-label">Unit Price *</label><input type="number" class="form-control" id="editItemPrice" value="${item.unit_price}" min="0" step="0.01" required /></div>
+                                <div class="col-md-4"><label class="form-label">Category *</label>
+                                    <select class="form-select" id="editItemCategory">${['raw_material','fixed_asset','consumable'].map(c => `<option value="${c}" ${c===item.category?'selected':''}>${c.replace('_',' ').toUpperCase()}</option>`).join('')}</select>
+                                </div>
+                                <div class="col-md-4"><label class="form-label">Status</label>
+                                    <select class="form-select" id="editItemStatus"><option value="active" ${item.status==='active'?'selected':''}>Active</option><option value="inactive" ${item.status==='inactive'?'selected':''}>Inactive</option><option value="used" ${item.status==='used'?'selected':''}>Used</option><option value="damaged" ${item.status==='damaged'?'selected':''}>Damaged</option></select>
+                                </div>
+                                <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" id="editItemDesc" rows="2">${item.description||''}</textarea></div>
+                            </div>
+                        </form>
+                    `, () => this.updateItem());
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            async updateItem() {
+                const id = this.editItemId;
+                const name = document.getElementById('editItemName').value.trim();
+                const unit = document.getElementById('editItemUnit').value;
+                const quantity = parseFloat(document.getElementById('editItemQty').value) || 0;
+                const unitPrice = parseFloat(document.getElementById('editItemPrice').value) || 0;
+                const category = document.getElementById('editItemCategory').value;
+                const status = document.getElementById('editItemStatus').value;
+                const description = document.getElementById('editItemDesc').value.trim();
+                if (!name) { showToast('Enter a name.', 'error'); return; }
+                try {
+                    await API.updateItem(id, { name, unit, quantity, unitPrice, category, status, description });
+                    this.closeModal();
+                    this.loadInventory();
+                    showToast(`Item updated!`, 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            async deleteItem(id) {
+                if (!confirm('Delete this item permanently?')) return;
+                try {
+                    await API.deleteItem(id);
+                    this.loadInventory();
+                    showToast('Item deleted.', 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            stockIn(id) { this.openTransactionModal(id, 'IN'); }
+            stockOut(id) { this.openTransactionModal(id, 'OUT'); }
+
+            async openTransactionModal(itemId = null, type = 'IN') {
+                try {
+                    const items = await API.getItems({ limit: 1000 });
+                    const defaultItem = itemId ? items.items.find(i => i.id === itemId) : null;
+                    this.showModal('New Transaction', `
+                        <form id="txnForm">
+                            <div class="mb-3"><label class="form-label">Item *</label>
+                                <select class="form-select" id="txnItem" required>
+                                    <option value="">Select...</option>
+                                    ${items.items.map(i => `<option value="${i.id}" ${defaultItem && i.id===defaultItem.id?'selected':''}>${i.id} - ${i.name} (${i.quantity} ${i.unit} available)</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="mb-3"><label class="form-label">Type *</label>
+                                <select class="form-select" id="txnType" required>
+                                    <option value="IN" ${type==='IN'?'selected':''}>Stock In</option>
+                                    <option value="OUT" ${type==='OUT'?'selected':''}>Stock Out</option>
+                                </select>
+                            </div>
+                            <div class="mb-3"><label class="form-label">Quantity *</label><input type="number" class="form-control" id="txnQty" value="1" min="1" required /></div>
+                            <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" id="txnDesc" rows="2"></textarea></div>
+                            <div class="mb-3"><label class="form-label">Reference</label><input type="text" class="form-control" id="txnRef" placeholder="PO, work order, etc." /></div>
+                        </form>
+                    `, () => this.executeTransaction());
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            async executeTransaction() {
+                const itemId = parseInt(document.getElementById('txnItem').value);
+                const type = document.getElementById('txnType').value;
+                const quantity = parseFloat(document.getElementById('txnQty').value) || 0;
+                const description = document.getElementById('txnDesc').value.trim();
+                const reference = document.getElementById('txnRef').value.trim();
+                if (!itemId) { showToast('Select an item.', 'error'); return; }
+                if (quantity <= 0) { showToast('Invalid quantity.', 'error'); return; }
+                try {
+                    await API.createTransaction({ itemId, type, quantity, description, reference });
+                    this.closeModal();
+                    if (this.currentView === 'transactions') this.loadTransactions();
+                    else this.loadInventory();
+                    showToast(`${type}: ${quantity} units`, 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            // ─── MODAL UTILITY ──────────────────────────────────────
+            showModal(title, bodyHTML, onSave) {
+                const modalId = 'dynamicModal';
+                const existing = document.getElementById(modalId);
+                if (existing) existing.remove();
+
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = modalId;
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content" style="border-radius:18px;border:none;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+                            <div class="modal-header" style="border-bottom:1px solid #e9eef3;padding:20px 24px;">
+                                <h5 class="modal-title fw-bold">${title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" style="padding:24px;">${bodyHTML}</div>
+                            <div class="modal-footer" style="border-top:1px solid #e9eef3;padding:16px 24px;">
+                                <button class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-primary-custom" id="modalSaveBtn"><i class="fas fa-check"></i> Save</button>
+                            </div>
                         </div>
                     </div>
                 `;
-            } catch (error) {
-                showToast(error.message, 'error');
+                document.body.appendChild(modal);
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+                document.getElementById('modalSaveBtn').addEventListener('click', onSave);
+                modal.addEventListener('hidden.bs.modal', () => {
+                    modal.remove();
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                });
             }
-        }
 
-        onTxnFilter(value) { this.transactionFilter = value; this.loadTransactions(); }
-
-        // ==================== MODALS ====================
-        openAddItemModal() {
-            this.editItemId = null;
-            this.showModal('Add New Item', `
-                <form id="itemForm">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Item Name *</label>
-                            <input type="text" class="form-control" id="itemName" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Unit *</label>
-                            <select class="form-select" id="itemUnit">
-                                ${['pcs','kg','meter','liter','gallon','roll','packet','set','ton','mm'].map(u => `<option value="${u}">${u}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Quantity *</label>
-                            <input type="number" class="form-control" id="itemQty" value="0" min="0" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Unit Price (Birr) *</label>
-                            <input type="number" class="form-control" id="itemPrice" value="0" min="0" step="0.01" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Category *</label>
-                            <select class="form-select" id="itemCategory">
-                                ${['raw_material','fixed_asset','consumable'].map(c => `<option value="${c}">${c.replace('_',' ').toUpperCase()}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="itemStatus">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="used">Used</option>
-                                <option value="damaged">Damaged</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" id="itemDesc" rows="2"></textarea>
-                        </div>
-                    </div>
-                </form>
-            `, () => this.saveItem());
-        }
-
-        async saveItem() {
-            const name = document.getElementById('itemName').value.trim();
-            const unit = document.getElementById('itemUnit').value;
-            const quantity = parseFloat(document.getElementById('itemQty').value) || 0;
-            const unitPrice = parseFloat(document.getElementById('itemPrice').value) || 0;
-            const category = document.getElementById('itemCategory').value;
-            const status = document.getElementById('itemStatus').value;
-            const description = document.getElementById('itemDesc').value.trim();
-
-            if (!name) { showToast('Please enter an item name.', 'error'); return; }
-
-            try {
-                await API.createItem({ name, unit, quantity, unitPrice, category, status, description });
-                this.closeModal();
-                this.loadInventory();
-                showToast(`Item "${name}" added successfully!`, 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        async editItem(id) {
-            try {
-                const item = await API.getItem(id);
-                this.editItemId = id;
-
-                this.showModal(`Edit Item: ${item.id}`, `
-                    <form id="editItemForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Item Name *</label>
-                                <input type="text" class="form-control" id="editItemName" value="${item.name}" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Unit *</label>
-                                <select class="form-select" id="editItemUnit">
-                                    ${['pcs','kg','meter','liter','gallon','roll','packet','set','ton','mm'].map(u => `<option value="${u}" ${u === item.unit ? 'selected' : ''}>${u}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Quantity *</label>
-                                <input type="number" class="form-control" id="editItemQty" value="${item.quantity}" min="0" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Unit Price (Birr) *</label>
-                                <input type="number" class="form-control" id="editItemPrice" value="${item.unit_price}" min="0" step="0.01" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Category *</label>
-                                <select class="form-select" id="editItemCategory">
-                                    ${['raw_material','fixed_asset','consumable'].map(c => `<option value="${c}" ${c === item.category ? 'selected' : ''}>${c.replace('_',' ').toUpperCase()}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" id="editItemStatus">
-                                    <option value="active" ${item.status === 'active' ? 'selected' : ''}>Active</option>
-                                    <option value="inactive" ${item.status === 'inactive' ? 'selected' : ''}>Inactive</option>
-                                    <option value="used" ${item.status === 'used' ? 'selected' : ''}>Used</option>
-                                    <option value="damaged" ${item.status === 'damaged' ? 'selected' : ''}>Damaged</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Description</label>
-                                <textarea class="form-control" id="editItemDesc" rows="2">${item.description || ''}</textarea>
-                            </div>
-                        </div>
-                    </form>
-                `, () => this.updateItem());
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        async updateItem() {
-            const id = this.editItemId;
-            const name = document.getElementById('editItemName').value.trim();
-            const unit = document.getElementById('editItemUnit').value;
-            const quantity = parseFloat(document.getElementById('editItemQty').value) || 0;
-            const unitPrice = parseFloat(document.getElementById('editItemPrice').value) || 0;
-            const category = document.getElementById('editItemCategory').value;
-            const status = document.getElementById('editItemStatus').value;
-            const description = document.getElementById('editItemDesc').value.trim();
-
-            if (!name) { showToast('Please enter an item name.', 'error'); return; }
-
-            try {
-                await API.updateItem(id, { name, unit, quantity, unitPrice, category, status, description });
-                this.closeModal();
-                this.loadInventory();
-                showToast(`Item "${name}" updated successfully!`, 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        async deleteItem(id) {
-            if (!confirm('Are you sure you want to delete this item?')) return;
-            try {
-                await API.deleteItem(id);
-                this.loadInventory();
-                showToast('Item deleted successfully!', 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        stockIn(id) { this.openTransactionModal(id, 'IN'); }
-        stockOut(id) { this.openTransactionModal(id, 'OUT'); }
-
-        async openTransactionModal(itemId = null, type = 'IN') {
-            try {
-                const items = await API.getItems({ limit: 1000 });
-                const defaultItem = itemId ? items.items.find(i => i.id === itemId) : null;
-
-                this.showModal('New Transaction', `
-                    <form id="txnForm">
-                        <div class="mb-3">
-                            <label class="form-label">Item *</label>
-                            <select class="form-select" id="txnItem" required>
-                                <option value="">Select an item...</option>
-                                ${items.items.map(i => `
-                                    <option value="${i.id}" ${defaultItem && i.id === defaultItem.id ? 'selected' : ''}>
-                                        ${i.id} - ${i.name} (${i.quantity} ${i.unit} available)
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Transaction Type *</label>
-                            <select class="form-select" id="txnType" required>
-                                <option value="IN" ${type === 'IN' ? 'selected' : ''}>Stock In</option>
-                                <option value="OUT" ${type === 'OUT' ? 'selected' : ''}>Stock Out</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Quantity *</label>
-                            <input type="number" class="form-control" id="txnQty" value="1" min="1" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" id="txnDesc" rows="2"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Reference</label>
-                            <input type="text" class="form-control" id="txnRef" placeholder="PO number, work order, etc.">
-                        </div>
-                    </form>
-                `, () => this.executeTransaction());
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        async executeTransaction() {
-            const itemId = parseInt(document.getElementById('txnItem').value);
-            const type = document.getElementById('txnType').value;
-            const quantity = parseFloat(document.getElementById('txnQty').value) || 0;
-            const description = document.getElementById('txnDesc').value.trim();
-            const reference = document.getElementById('txnRef').value.trim();
-
-            if (!itemId) { showToast('Please select an item.', 'error'); return; }
-            if (quantity <= 0) { showToast('Please enter a valid quantity.', 'error'); return; }
-
-            try {
-                await API.createTransaction({ itemId, type, quantity, description, reference });
-                this.closeModal();
-                if (this.currentView === 'transactions') this.loadTransactions();
-                else this.loadInventory();
-                showToast(`Transaction completed! ${type}: ${quantity} units`, 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        // ==================== MODAL UTILITY ====================
-        showModal(title, bodyHTML, onSave) {
-            const modalId = 'dynamicModal';
-            const existing = document.getElementById(modalId);
-            if (existing) existing.remove();
-
-            const modal = document.createElement('div');
-            modal.className = 'modal fade';
-            modal.id = modalId;
-            modal.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${title}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">${bodyHTML}</div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button class="btn btn-primary" id="modalSaveBtn"><i class="fas fa-check"></i> Save</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-
-            document.getElementById('modalSaveBtn').addEventListener('click', onSave);
-            modal.addEventListener('hidden.bs.modal', () => {
-                modal.remove();
+            closeModal() {
+                const modal = document.getElementById('dynamicModal');
+                if (modal) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                    else modal.remove();
+                }
                 document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
                 document.body.classList.remove('modal-open');
                 document.body.style.overflow = '';
-            });
-        }
-
-        closeModal() {
-            const modal = document.getElementById('dynamicModal');
-            if (modal) {
-                const bsModal = bootstrap.Modal.getInstance(modal);
-                if (bsModal) bsModal.hide();
-                else modal.remove();
             }
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-        }
 
-        // ==================== REPORTS ====================
-        async loadReport() {
-            try {
-                const [topItems, monthlySummary, lowStock] = await Promise.all([
-                    API.getTopItems(10),
-                    API.getMonthlySummary(),
-                    API.getLowStock()
-                ]);
+            // ─── FILTER / PAGINATION ──────────────────────────────
+            onSearch(q) { this.searchQuery = q; this.currentPage = 1; this.loadInventory(); }
+            onCategoryFilter(v) { this.filterCategory = v; this.currentPage = 1; this.loadInventory(); }
+            onStatusFilter(v) { this.filterStatus = v; this.currentPage = 1; this.loadInventory(); }
+            onSort(v) { this.sortField = v; this.loadInventory(); }
+            goToPage(p) { this.currentPage = p; this.loadInventory(); }
+            onTxnFilter(v) { this.transactionFilter = v; this.loadTransactions(); }
 
-                this.content.innerHTML = `
-                    <div class="container-fluid mt-3">
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <h4><i class="fas fa-file-alt text-primary"></i> Reports & Analytics</h4>
-                                <p class="text-muted">Comprehensive inventory reports and insights</p>
-                            </div>
-                        </div>
+            // ─── REPORTS ────────────────────────────────────────────
+            async loadReport() {
+                try {
+                    const [topItems, monthlySummary, lowStock] = await Promise.all([
+                        API.getTopItems(10),
+                        API.getMonthlySummary(),
+                        API.getLowStock()
+                    ]);
 
-                        <div class="row g-3">
+                    this.content.innerHTML = `
+                        <div class="row g-4">
                             <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-chart-bar"></i> Top 10 Items by Value</h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm mb-0">
+                                <div class="panel">
+                                    <div class="panel-header"><h5><i class="fas fa-chart-bar"></i> Top 10 Items by Value</h5></div>
+                                    <div class="table-wrap">
+                                        <table class="table-custom">
                                             <thead><tr><th>#</th><th>Item</th><th>Value (Birr)</th></tr></thead>
                                             <tbody>
                                                 ${topItems.map((item, i) => `
-                                                    <tr>
-                                                        <td>${i + 1}</td>
-                                                        <td>${item.name}</td>
-                                                        <td>${Number(item.total_price).toFixed(2)}</td>
-                                                    </tr>
+                                                    <tr><td>${i+1}</td><td>${item.name}</td><td>${Number(item.total_price).toFixed(2)}</td></tr>
                                                 `).join('')}
-                                                ${topItems.length === 0 ? '<tr><td colspan="3" class="text-center text-muted">No items found</td></tr>' : ''}
+                                                ${topItems.length === 0 ? '<tr><td colspan="3" class="text-muted">No items</td></tr>' : ''}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-calendar-alt"></i> Monthly Transaction Summary</h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm mb-0">
+                                <div class="panel">
+                                    <div class="panel-header"><h5><i class="fas fa-calendar-alt"></i> Monthly Summary</h5></div>
+                                    <div class="table-wrap">
+                                        <table class="table-custom">
                                             <thead><tr><th>Month</th><th>Stock In</th><th>Stock Out</th></tr></thead>
                                             <tbody>
                                                 ${monthlySummary.map(m => `
-                                                    <tr>
-                                                        <td>${m.month}</td>
-                                                        <td class="text-success">${m.stock_in || 0}</td>
-                                                        <td class="text-warning">${m.stock_out || 0}</td>
-                                                    </tr>
+                                                    <tr><td>${m.month}</td><td class="text-success">${m.stock_in || 0}</td><td class="text-warning">${m.stock_out || 0}</td></tr>
                                                 `).join('')}
-                                                ${monthlySummary.length === 0 ? '<tr><td colspan="3" class="text-center text-muted">No transactions</td></tr>' : ''}
+                                                ${monthlySummary.length === 0 ? '<tr><td colspan="3" class="text-muted">No data</td></tr>' : ''}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row g-3 mt-2">
                             <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-exclamation-triangle text-warning"></i> Low Stock Items</h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm mb-0">
+                                <div class="panel">
+                                    <div class="panel-header"><h5><i class="fas fa-exclamation-triangle text-warning"></i> Low Stock Items</h5></div>
+                                    <div class="table-wrap">
+                                        <table class="table-custom">
                                             <thead><tr><th>Item</th><th>Qty</th><th>Min Level</th><th>Unit</th></tr></thead>
                                             <tbody>
                                                 ${lowStock.map(item => `
-                                                    <tr>
-                                                        <td>${item.name}</td>
-                                                        <td class="text-danger fw-bold">${item.quantity}</td>
-                                                        <td>${item.min_stock_level || 5}</td>
-                                                        <td>${item.unit}</td>
-                                                    </tr>
+                                                    <tr><td>${item.name}</td><td class="text-danger fw-bold">${item.quantity}</td><td>${item.min_stock_level || 5}</td><td>${item.unit}</td></tr>
                                                 `).join('')}
-                                                ${lowStock.length === 0 ? '<tr><td colspan="4" class="text-center text-muted">No low stock items</td></tr>' : ''}
+                                                ${lowStock.length === 0 ? '<tr><td colspan="4" class="text-muted">No low stock items</td></tr>' : ''}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="stat-card">
-                                    <h6><i class="fas fa-download"></i> Export Options</h6>
-                                    <button class="btn btn-primary btn-sm me-2" onclick="inventorySystem.exportInventory()">
-                                        <i class="fas fa-file-excel"></i> Export Inventory
-                                    </button>
-                                    <button class="btn btn-success btn-sm" onclick="inventorySystem.exportTransactions()">
-                                        <i class="fas fa-file-excel"></i> Export Transactions
-                                    </button>
-                                    <hr>
-                                    <p class="text-muted small">Data is stored in SQLite database. Export to CSV for further analysis.</p>
+                                <div class="panel">
+                                    <div class="panel-header"><h5><i class="fas fa-download"></i> Export</h5></div>
+                                    <button class="btn btn-primary-custom btn-sm me-2" onclick="inventorySystem.exportInventory()"><i class="fas fa-file-excel"></i> Inventory CSV</button>
+                                    <button class="btn btn-success btn-sm" onclick="inventorySystem.exportTransactions()"><i class="fas fa-file-excel"></i> Transactions CSV</button>
+                                    <hr />
+                                    <p class="text-muted small">Data stored in Supabase (PostgreSQL).</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            } catch (error) {
-                showToast(error.message, 'error');
+                    `;
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            }
+
+            // ─── EXPORT ─────────────────────────────────────────────
+            async exportInventory() {
+                try {
+                    const result = await API.getItems({ limit: 10000 });
+                    const items = result.items;
+                    const headers = ['ID','Name','Unit','Quantity','Unit Price','Total Value','Category','Status'];
+                    const rows = items.map(i => [i.id, `"${i.name}"`, i.unit, i.quantity,
+                        Number(i.unit_price).toFixed(2), Number(i.total_price || i.quantity * i.unit_price).toFixed(2),
+                        i.category, i.status || 'Active'
+                    ]);
+                    this.downloadCSV([headers, ...rows], 'inventory_export.csv');
+                    showToast('Inventory exported.', 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            async exportTransactions() {
+                try {
+                    const result = await API.getTransactions({ limit: 10000 });
+                    const transactions = result.transactions;
+                    const headers = ['ID','Date','Item ID','Item Name','Type','Quantity','Unit','Unit Price','Total','Description'];
+                    const rows = transactions.map(t => [t.id, new Date(t.created_at).toLocaleDateString(), t.item_id, `"${t.item_name}"`,
+                        t.type, t.quantity, t.unit, Number(t.unit_price).toFixed(2),
+                        Number(t.total_price).toFixed(2), `"${t.description||''}"`
+                    ]);
+                    this.downloadCSV([headers, ...rows], 'transactions_export.csv');
+                    showToast('Transactions exported.', 'success');
+                } catch (error) { showToast(error.message, 'error'); }
+            }
+
+            downloadCSV(rows, filename) {
+                const csv = rows.map(row => row.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
             }
         }
 
-        // ==================== EXPORT ====================
-        async exportInventory() {
-            try {
-                const result = await API.getItems({ limit: 10000 });
-                const items = result.items;
-                const headers = ['ID', 'Name', 'Unit', 'Quantity', 'Unit Price', 'Total Value', 'Category', 'Status'];
-                const rows = items.map(i => [
-                    i.id, `"${i.name}"`, i.unit, i.quantity,
-                    Number(i.unit_price).toFixed(2), Number(i.total_price || i.quantity * i.unit_price).toFixed(2),
-                    i.category, i.status || 'Active'
-                ]);
-                this.downloadCSV([headers, ...rows], 'inventory_export.csv');
-                showToast('Inventory exported successfully!', 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        async exportTransactions() {
-            try {
-                const result = await API.getTransactions({ limit: 10000 });
-                const transactions = result.transactions;
-                const headers = ['ID', 'Date', 'Item ID', 'Item Name', 'Type', 'Quantity', 'Unit', 'Unit Price', 'Total', 'Description'];
-                const rows = transactions.map(t => [
-                    t.id, new Date(t.created_at).toLocaleDateString(), t.item_id, `"${t.item_name}"`,
-                    t.type, t.quantity, t.unit, Number(t.unit_price).toFixed(2),
-                    Number(t.total_price).toFixed(2), `"${t.description || ''}"`
-                ]);
-                this.downloadCSV([headers, ...rows], 'transactions_export.csv');
-                showToast('Transactions exported successfully!', 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
-
-        downloadCSV(rows, filename) {
-            const csv = rows.map(row => row.join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-        }
-    }
-
-    // ============================================================
-    // INITIALIZE
-    // ============================================================
-    let inventorySystem;
-
-    document.addEventListener('DOMContentLoaded', () => {
-        inventorySystem = new StoreInventorySystem();
-        window.inventorySystem = inventorySystem;
-    });
+        // ============================================================
+        // INIT
+        // ============================================================
+        let inventorySystem;
+        document.addEventListener('DOMContentLoaded', () => {
+            inventorySystem = new StoreInventorySystem();
+            window.inventorySystem = inventorySystem;
+        });
     </script>
 </body>
 </html>
