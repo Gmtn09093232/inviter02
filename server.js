@@ -84,19 +84,16 @@ async function supabaseQuery(table, operation, params = {}) {
                 if (Array.isArray(value)) {
                     q = q.in(key, value);
                 } else if (typeof value === 'object' && value.operator) {
-                    // e.g., { operator: 'ilike', value: '%search%' }
                     q = q.filter(key, value.operator, value.value);
                 } else {
                     q = q.eq(key, value);
                 }
             }
 
-            // Apply sorting
             if (order.column) {
                 q = q.order(order.column, { ascending: order.ascending !== false });
             }
 
-            // Apply range (pagination)
             if (range.start !== undefined && range.end !== undefined) {
                 q = q.range(range.start, range.end);
             }
@@ -200,7 +197,6 @@ app.post('/api/auth/register', [
     const { username, password, fullName, role } = req.body;
 
     try {
-        // Check if user exists
         const { data: existing } = await supabase
             .from('users')
             .select('id')
@@ -249,7 +245,6 @@ app.get('/api/items', authenticateToken, async (req, res) => {
     try {
         let query = supabase.from('items').select('*', { count: 'exact' });
 
-        // Apply filters
         if (search) {
             query = query.or(`name.ilike.%${search}%,id::text.ilike.%${search}%`);
         }
@@ -260,12 +255,10 @@ app.get('/api/items', authenticateToken, async (req, res) => {
             query = query.eq('status', status);
         }
 
-        // Order by
         const orderField = sort === 'total_price' ? 'total_price' : sort;
         const ascending = order.toUpperCase() !== 'DESC';
         query = query.order(orderField, { ascending });
 
-        // Pagination
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const start = (pageNum - 1) * limitNum;
@@ -277,7 +270,6 @@ app.get('/api/items', authenticateToken, async (req, res) => {
 
         if (error) throw new Error(error.message);
 
-        // Ensure total_price is calculated
         data.forEach(item => {
             item.total_price = item.quantity * item.unit_price;
         });
@@ -353,7 +345,6 @@ app.post('/api/items', authenticateToken, [
 
         const newItem = data[0];
 
-        // If quantity > 0, create initial stock-in transaction
         if (quantity > 0) {
             await supabase
                 .from('transactions')
@@ -396,7 +387,6 @@ app.put('/api/items/:id', authenticateToken, [
     } = req.body;
 
     try {
-        // Get current item to compare quantity
         const { data: currentData, error: fetchError } = await supabase
             .from('items')
             .select('*')
@@ -428,7 +418,6 @@ app.put('/api/items/:id', authenticateToken, [
 
         if (error) throw new Error(error.message);
 
-        // Record quantity change as transaction
         const qtyDiff = quantity - currentItem.quantity;
         if (qtyDiff !== 0) {
             const type = qtyDiff > 0 ? 'IN' : 'OUT';
@@ -457,7 +446,6 @@ app.put('/api/items/:id', authenticateToken, [
 
 app.delete('/api/items/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        // Delete associated transactions first
         await supabase
             .from('transactions')
             .delete()
@@ -541,7 +529,6 @@ app.post('/api/transactions', authenticateToken, [
     const { itemId, type, quantity, description, reference } = req.body;
 
     try {
-        // Get item
         const { data: itemData, error: itemError } = await supabase
             .from('items')
             .select('*')
@@ -562,7 +549,6 @@ app.post('/api/transactions', authenticateToken, [
 
         const totalPrice = quantity * item.unit_price;
 
-        // Create transaction
         const { data: txnData, error: txnError } = await supabase
             .from('transactions')
             .insert({
@@ -581,7 +567,6 @@ app.post('/api/transactions', authenticateToken, [
 
         if (txnError) throw new Error(txnError.message);
 
-        // Update item quantity
         const newQuantity = type === 'IN' ? item.quantity + quantity : item.quantity - quantity;
         const newTotalPrice = newQuantity * item.unit_price;
 
@@ -660,14 +645,12 @@ app.post('/api/categories', authenticateToken, requireAdmin, [
 // ============================================================
 app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
     try {
-        // Total items
         const { count: totalItems, error: countError } = await supabase
             .from('items')
             .select('*', { count: 'exact', head: true });
 
         if (countError) throw new Error(countError.message);
 
-        // Total value
         const { data: valueData, error: valueError } = await supabase
             .from('items')
             .select('total_price');
@@ -675,7 +658,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
         if (valueError) throw new Error(valueError.message);
         const totalValue = valueData.reduce((sum, row) => sum + (row.total_price || 0), 0);
 
-        // Low stock items
         const { count: lowStockCount, error: lowError } = await supabase
             .from('items')
             .select('*', { count: 'exact', head: true })
@@ -684,13 +666,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 
         if (lowError) throw new Error(lowError.message);
 
-        // Category breakdown
-        const { data: catData, error: catError } = await supabase
-            .from('items')
-            .select('category, count:count(*)')
-            .group('category');
-
-        // Simple alternative: use raw query or manual aggregation
         const { data: allItems } = await supabase
             .from('items')
             .select('category');
@@ -700,7 +675,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             categoryBreakdown[item.category] = (categoryBreakdown[item.category] || 0) + 1;
         });
 
-        // Status breakdown
         const { data: allItemsStatus } = await supabase
             .from('items')
             .select('status');
@@ -711,7 +685,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
         });
 
-        // Recent transactions
         const { data: recentTxns, error: txnError } = await supabase
             .from('transactions')
             .select('*')
@@ -720,7 +693,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 
         if (txnError) throw new Error(txnError.message);
 
-        // Monthly summary
         const { data: monthlyData, error: monthlyError } = await supabase
             .from('transactions')
             .select('created_at, type, quantity');
@@ -729,7 +701,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 
         const monthlySummary = {};
         (monthlyData || []).forEach(txn => {
-            const month = new Date(txn.created_at).toISOString().slice(0, 7); // YYYY-MM
+            const month = new Date(txn.created_at).toISOString().slice(0, 7);
             if (!monthlySummary[month]) monthlySummary[month] = { stock_in: 0, stock_out: 0 };
             if (txn.type === 'IN') monthlySummary[month].stock_in += txn.quantity;
             else if (txn.type === 'OUT') monthlySummary[month].stock_out += txn.quantity;
@@ -834,7 +806,7 @@ app.get('/api/reports/monthly-summary', authenticateToken, async (req, res) => {
 
         const summary = {};
         (data || []).forEach(txn => {
-            const month = new Date(txn.created_at).toISOString().slice(5, 7); // MM
+            const month = new Date(txn.created_at).toISOString().slice(5, 7);
             if (!summary[month]) summary[month] = { stock_in: 0, stock_out: 0 };
             if (txn.type === 'IN') summary[month].stock_in += txn.quantity;
             else if (txn.type === 'OUT') summary[month].stock_out += txn.quantity;
@@ -883,9 +855,9 @@ app.get('/api/users', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // ============================================================
-// SERVE FRONTEND
+// SERVE FRONTEND - FIXED ROUTE
 // ============================================================
-app.get('./', (req, res) => {
+app.get('/', (req, res) => {   // ✅ CORRECTED: '/' instead of './'
     const indexPath = path.join(__dirname, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
