@@ -136,11 +136,6 @@
             color: #f9b43a;
             margin-right: 10px;
         }
-        .topbar .topbar-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
 
         /* ── Stat Cards ── */
         .stat-grid {
@@ -354,27 +349,6 @@
             .hamburger { display: inline-block; }
         }
 
-        /* ── Login page override ── */
-        .login-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .login-box {
-            max-width: 400px;
-            width: 100%;
-            background: #fff;
-            border-radius: 24px;
-            padding: 40px 32px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-            border: 1px solid #e9eef3;
-        }
-        .login-box h3 { font-weight: 700; color: #0b1a2e; }
-        .login-box .brand-icon { color: #f9b43a; margin-right: 8px; }
-
         /* toast container */
         .toast-container {
             position: fixed;
@@ -385,9 +359,6 @@
             flex-direction: column;
             gap: 8px;
         }
-
-        /* Hide elements when not authenticated */
-        .hidden-auth { display: none; }
     </style>
 </head>
 <body>
@@ -407,11 +378,9 @@
         <div class="sidebar-footer">
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar">A</div>
-                <span id="userName">User</span>
+                <span id="userName">Admin</span>
             </div>
-            <button class="btn btn-sm btn-outline-light" onclick="inventorySystem.logout()" style="border-color:rgba(255,255,255,0.2);">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
+            <!-- Logout button removed -->
         </div>
     </aside>
 
@@ -440,35 +409,21 @@
 
     <script>
         // ============================================================
-        // API CLIENT (unchanged)
+        // API CLIENT (no auth)
         // ============================================================
         const API = {
             baseURL: '/api',
-            token: localStorage.getItem('token') || null,
-            setToken(token) {
-                this.token = token;
-                token ? localStorage.setItem('token', token) : localStorage.removeItem('token');
-            },
-            getHeaders() {
-                return {
-                    'Content-Type': 'application/json',
-                    ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {})
-                };
-            },
             async request(method, endpoint, data = null) {
                 const url = `${this.baseURL}${endpoint}`;
-                const options = { method, headers: this.getHeaders() };
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
                 if (data) options.body = JSON.stringify(data);
                 const response = await fetch(url, options);
                 const result = await response.json();
                 if (!response.ok) {
-                    if (response.status === 401) { this.setToken(null); window.location.reload(); }
                     throw new Error(result.error || result.message || 'Request failed');
                 }
                 return result;
             },
-            login(username, password) { return this.request('POST', '/auth/login', { username, password }); },
-            register(data) { return this.request('POST', '/auth/register', data); },
             getItems(params = {}) {
                 const query = new URLSearchParams(params).toString();
                 return this.request('GET', `/items?${query}`);
@@ -499,12 +454,7 @@
         // ============================================================
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
-            const colors = {
-                success: 'bg-success',
-                error: 'bg-danger',
-                warning: 'bg-warning',
-                info: 'bg-info'
-            };
+            const colors = { success: 'bg-success', error: 'bg-danger', warning: 'bg-warning', info: 'bg-info' };
             const toast = document.createElement('div');
             toast.className = `toast align-items-center text-white ${colors[type] || colors.info} border-0 show`;
             toast.role = 'alert';
@@ -519,11 +469,10 @@
         }
 
         // ============================================================
-        // MAIN APPLICATION
+        // MAIN APPLICATION (no login)
         // ============================================================
         class StoreInventorySystem {
             constructor() {
-                this.isAuthenticated = !!API.token;
                 this.currentView = 'dashboard';
                 this.items = [];
                 this.transactions = [];
@@ -540,27 +489,24 @@
                 this.currentPage = 1;
                 this.totalItems = 0;
                 this.totalPages = 1;
-                this.user = null;
                 this.chartInstance = null;
 
                 this.content = document.getElementById('content');
                 this.pageTitle = document.getElementById('pageTitle');
-                this.topbar = document.getElementById('topbar');
-                this.sidebar = document.getElementById('sidebar');
                 this.initUI();
-                this.checkAuth();
+                this.loadDashboard();
             }
 
             initUI() {
                 // Hamburger toggle
                 document.getElementById('hamburgerBtn').addEventListener('click', () => {
-                    this.sidebar.classList.toggle('open');
+                    document.getElementById('sidebar').classList.toggle('open');
                 });
                 // Close sidebar on link click (mobile)
                 document.querySelectorAll('#sidebarNav .nav-link').forEach(link => {
                     link.addEventListener('click', () => {
                         if (window.innerWidth <= 992) {
-                            this.sidebar.classList.remove('open');
+                            document.getElementById('sidebar').classList.remove('open');
                         }
                     });
                 });
@@ -574,89 +520,6 @@
                         link.classList.add('active');
                     });
                 });
-            }
-
-            checkAuth() {
-                if (this.isAuthenticated) {
-                    this.showAuthenticatedUI();
-                    this.loadDashboard();
-                    this.updateUserInfo();
-                } else {
-                    this.showLoginUI();
-                }
-            }
-
-            showAuthenticatedUI() {
-                this.sidebar.style.display = 'flex';
-                this.topbar.style.display = 'flex';
-                // Ensure content is visible
-                this.content.style.display = 'block';
-            }
-
-            showLoginUI() {
-                this.sidebar.style.display = 'none';
-                this.topbar.style.display = 'none';
-                this.content.style.display = 'block';
-                this.content.innerHTML = `
-                    <div class="login-wrapper">
-                        <div class="login-box">
-                            <h3 class="text-center"><i class="fas fa-industry brand-icon"></i> Amhara Metal</h3>
-                            <p class="text-center text-muted">Inventory Management System</p>
-                            <hr />
-                            <form id="loginForm" onsubmit="inventorySystem.handleLogin(event)">
-                                <div class="mb-3">
-                                    <label class="form-label">Username</label>
-                                    <input type="text" class="form-control" id="loginUsername" value="admin" required />
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="loginPassword" value="admin123" required />
-                                </div>
-                                <button type="submit" class="btn btn-primary-custom w-100">
-                                    <i class="fas fa-sign-in-alt"></i> Login
-                                </button>
-                            </form>
-                            <hr />
-                            <p class="text-center text-muted small">Default: admin / admin123</p>
-                        </div>
-                    </div>
-                `;
-                this.pageTitle.textContent = 'Login';
-            }
-
-            async handleLogin(e) {
-                e.preventDefault();
-                const username = document.getElementById('loginUsername').value;
-                const password = document.getElementById('loginPassword').value;
-                try {
-                    const result = await API.login(username, password);
-                    API.setToken(result.token);
-                    this.isAuthenticated = true;
-                    this.user = result.user;
-                    showToast('Login successful!', 'success');
-                    this.showAuthenticatedUI();
-                    this.loadDashboard();
-                    this.updateUserInfo();
-                } catch (error) {
-                    showToast(error.message, 'error');
-                }
-            }
-
-            logout() {
-                API.setToken(null);
-                this.isAuthenticated = false;
-                this.user = null;
-                this.showLoginUI();
-                showToast('Logged out', 'info');
-            }
-
-            updateUserInfo() {
-                const avatar = document.getElementById('userAvatar');
-                const nameSpan = document.getElementById('userName');
-                if (this.user) {
-                    avatar.textContent = this.user.fullName ? this.user.fullName.charAt(0).toUpperCase() : 'U';
-                    nameSpan.textContent = this.user.fullName || this.user.username || 'User';
-                }
             }
 
             switchView(view) {
@@ -758,7 +621,6 @@
                             </div>
                         </div>
                     `;
-                    // Render chart
                     this.renderMonthlyChart(stats.monthlySummary || []);
                 } catch (error) {
                     showToast(error.message, 'error');
@@ -968,7 +830,7 @@
                 }
             }
 
-            // ─── MODALS (unchanged logic, but styles updated) ────
+            // ─── MODALS ─────────────────────────────────────────────
             openAddItemModal() {
                 this.editItemId = null;
                 this.showModal('Add New Item', `
