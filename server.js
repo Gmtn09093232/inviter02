@@ -1,5 +1,6 @@
 // ============================================================
 // SERVER.JS - Inventory System with Supabase (No Auth)
+// Works with Express 5 – uses {*path} for wildcard routes
 // ============================================================
 
 require('dotenv').config();
@@ -543,8 +544,11 @@ app.get('/api/reports/low-stock', async (req, res) => {
     }
 });
 
-// ---- Catch-all for API ----
-app.use('/api/*', (req, res) => {
+// ============================================================
+// CATCH-ALL for API routes – FIXED for Express 5
+// ============================================================
+// Use named wildcard {*path} to avoid path-to-regexp error
+app.use('/api/{*path}', (req, res) => {
     res.status(404).json({ error: `API endpoint not found: ${req.originalUrl}` });
 });
 
