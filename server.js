@@ -40,7 +40,7 @@ app.use(express.static(path.join(__dirname, '.')));
 const SYSTEM_USER = { username: 'admin', id: 1 };
 
 // ============================================================
-// HEALTH CHECK (to test if server is alive)
+// HEALTH CHECK
 // ============================================================
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -543,9 +543,7 @@ app.get('/api/reports/low-stock', async (req, res) => {
     }
 });
 
-// ============================================================
-// CATCH-ALL for API routes – returns JSON error
-// ============================================================
+// ---- Catch-all for API ----
 app.use('/api/*', (req, res) => {
     res.status(404).json({ error: `API endpoint not found: ${req.originalUrl}` });
 });
