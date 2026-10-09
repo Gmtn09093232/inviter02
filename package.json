@@ -1,20 +1,11 @@
 {
-  "name": "warehouse-ims",
+  "name": "wms-admin-server",
   "version": "1.0.0",
-  "description": "Warehouse Inventory Management System — REST API backend",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "seed": "node server.js --seed"
-  },
+  "scripts": { "start": "node server.js" },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.3.0",
+    "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.5",
-    "express": "^4.21.0",
-    "jsonwebtoken": "^9.0.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "express": "^4.21.0"
   }
 }
