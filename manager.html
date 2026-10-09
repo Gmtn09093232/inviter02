@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warehouse Manager — Approval Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--primary:#0f766e;--primary-dark:#115e59;--accent:#f59e0b;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--success:#16a34a;--warn:#f59e0b;--danger:#dc2626;--info:#0284c7;--sidebar:#0f172a}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  button,input,select,textarea{font-family:inherit;font-size:14px}
+  button{cursor:pointer;border:none;background:none}
+
+  /* LOGIN */
+  #loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a,#7c2d12);padding:20px;z-index:2000}
+  .login-box{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .login-box h1{font-size:20px;margin-bottom:4px;color:#92400e}
+  .login-box .role-badge{display:inline-block;background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:14px}
+  .login-box p{color:var(--muted);margin-bottom:20px;font-size:12.5px}
+  .denied{background:#fef2f2;color:#991b1b;padding:10px;border-radius:8px;font-size:12.5px;margin-top:12px;display:none}
+
+  /* LAYOUT */
+  .app{display:none;min-height:100vh}
+  .app.active{display:flex}
+  .sidebar{width:250px;background:var(--sidebar);color:#cbd5e1;flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
+  .brand{padding:20px;border-bottom:1px solid #1e293b}
+  .brand h2{color:#fff;font-size:15px}
+  .brand small{color:#f59e0b;font-size:11px;font-weight:600;letter-spacing:.06em}
+  .nav{flex:1;padding:10px 0}
+  .nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:#cbd5e1;text-decoration:none;font-size:13.5px;border-left:3px solid transparent;cursor:pointer}
+  .nav a:hover{background:#1e293b;color:#fff}
+  .nav a.active{background:#1e293b;color:#fff;border-left-color:var(--accent)}
+  .nav .section{padding:14px 20px 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#475569}
+  .nav .badge{margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+  .main{flex:1;margin-left:250px;min-width:0}
+  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+  .topbar h3{font-size:16px;flex:1}
+  .user-chip{display:flex;align-items:center;gap:8px;font-size:13px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px}
+  .content{padding:20px;max-width:1500px}
+  .menu-btn{display:none;width:36px;height:36px;border-radius:8px;background:#f1f5f9;place-items:center;font-size:16px}
+
+  /* CARDS */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)}
+  .card .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .card .value{font-size:24px;font-weight:700;margin-top:6px}
+  .card .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .card.warn .value{color:var(--warn)}.card.danger .value{color:var(--danger)}.card.success .value{color:var(--success)}.card.info .value{color:var(--info)}
+
+  /* PANEL */
+  .panel{background:#fff;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .panel-head h4{font-size:14.5px;flex:1}
+  .panel-body{padding:16px 18px}
+  .panel-body.p0{padding:0}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+  th{text-align:left;padding:10px 12px;background:#f8fafc;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid #f1f5f9}
+  tr:hover td{background:#fafbfc}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+
+  /* BADGES */
+  .badge-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+  .s-normal{background:#dcfce7;color:#166534}
+  .s-low{background:#fef3c7;color:#92400e}
+  .s-critical{background:#fed7aa;color:#9a3412}
+  .s-out{background:#fee2e2;color:#991b1b}
+  .s-draft{background:#e2e8f0;color:#475569}
+  .s-pending{background:#fef3c7;color:#92400e}
+  .s-approved{background:#dcfce7;color:#166534}
+  .s-rejected{background:#fee2e2;color:#991b1b}
+  .s-correction{background:#e0e7ff;color:#3730a3}
+  .s-reversed{background:#f3e8ff;color:#6b21a8}
+  .pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;background:#e2e8f0;color:#475569;font-weight:600}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;background:var(--primary);color:#fff;transition:.15s}
+  .btn:hover{background:var(--primary-dark)}
+  .btn.sec{background:#fff;color:var(--text);border:1px solid var(--border)}
+  .btn.sec:hover{background:#f8fafc}
+  .btn.danger{background:var(--danger)}
+  .btn.warn{background:var(--warn)}
+  .btn.success{background:var(--success)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* FORM */
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:#fff;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:center;justify-content:center;z-index:1000;padding:14px}
+  .modal-overlay.active{display:flex}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:960px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.35)}
+  .modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .modal-head h4{flex:1;font-size:15.5px}
+  .modal-body{padding:20px;overflow-y:auto;flex:1}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+  .x-btn{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:18px;color:var(--muted)}
+
+  /* MISC */
+  .empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+  .toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;z-index:3000;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.3);transform:translateY(100px);opacity:0;transition:.25s}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.warn{background:var(--warn)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs button{padding:7px 13px;border-radius:20px;font-size:12.5px;background:#fff;border:1px solid var(--border)}
+  .tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13px}
+  .stat-row:last-child{border-bottom:none}
+  .stat-row b{font-variant-numeric:tabular-nums}
+
+  @media (max-width:900px){
+    .sidebar{transform:translateX(-100%);transition:.25s}
+    .sidebar.open{transform:translateX(0)}
+    .main{margin-left:0}.content{padding:14px}
+    .menu-btn{display:grid}
+    .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="role-badge">🏢 WAREHOUSE MANAGER</div>
+    <h1>Manager Approval Portal</h1>
+    <p>Sign in to review and approve warehouse transactions. Only users with the <b>Warehouse Manager</b> or <b>Super Admin</b> role may access this portal.</p>
+    <div class="field" style="margin-bottom:12px">
+      <label>Username</label>
+      <input id="loginUser" value="manager" autocomplete="username">
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Password</label>
+      <input id="loginPass" type="password" value="manager" autocomplete="current-password">
+    </div>
+    <button class="btn" style="width:100%;justify-content:center;background:#92400e" onclick="doLogin()">Sign In as Manager</button>
+    <div class="denied" id="deniedMsg"></div>
+    <p style="margin-top:14px;font-size:11.5px;text-align:center;color:#94a3b8">
+      Demo: <b>manager</b>/manager · <b>admin</b>/admin
+    </p>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <h2>🏢 Manager Portal</h2>
+      <small id="brandSub">Approval Dashboard</small>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <h3 id="pageTitle">Manager Dashboard</h3>
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar">M</div>
+        <div>
+          <div style="font-weight:600" id="userName">Manager</div>
+          <div style="font-size:11px;color:var(--muted)" id="userRole">Warehouse Manager</div>
+        </div>
+        <button class="btn sec sm" onclick="doLogout()" style="margin-left:6px">Logout</button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+/* ========================================================================
+   SHARED DATABASE (same key as storekeeper.html → data flows between pages)
+   ======================================================================== */
+const DB_KEY = 'wms_db_v3';
+
+function defaultDB(){
+  return {
+    users:[
+      {id:1,username:'admin',password:'admin',name:'System Admin',role:'super_admin',active:true},
+      {id:2,username:'manager',password:'manager',name:'Abebe Manager',role:'warehouse_manager',active:true},
+      {id:3,username:'store',password:'store',name:'John Storekeeper',role:'storekeeper',active:true},
+      {id:4,username:'auditor',password:'auditor',name:'Sara Auditor',role:'auditor',active:true},
+    ],
+    items:[
+      {id:1,code:'BRG-6205',sku:'SKU-6205',barcode:'1000000001',name:'Bearing 6205',desc:'Deep groove ball bearing',categoryId:1,subcategory:'Ball Bearings',unit:'pcs',minStock:20,maxStock:500,reorderLevel:50,unitCost:500,warehouse:'Main Warehouse',building:'A',rack:'R-03',shelf:'S-02',bin:'B-05',supplierId:1,status:'Active',createdAt:'2024-01-01',updatedAt:'2024-01-01'},
+      {id:2,code:'BRG-6206',sku:'SKU-6206',barcode:'1000000002',name:'Bearing 6206',desc:'Deep groove ball bearing',categoryId:1,subcategory:'Ball Bearings',unit:'pcs',minStock:20,maxStock:400,reorderLevel:40,unitCost:650,warehouse:'Main Warehouse',building:'A',rack:'R-03',shelf:'S-02',bin:'B-06',supplierId:1,status:'Active',createdAt:'2024-01-01',updatedAt:'2024-01-01'},
+      {id:3,code:'BLT-B52',sku:'SKU-B52',barcode:'1000000003',name:'V-Belt B-52',desc:'V-belt type B size 52',categoryId:2,subcategory:'V-Belts',unit:'pcs',minStock:10,maxStock:200,reorderLevel:25,unitCost:180,warehouse:'Main Warehouse',building:'A',rack:'R-05',shelf:'S-01',bin:'B-02',supplierId:2,status:'Active',createdAt:'2024-01-01',updatedAt:'2024-01-01'},
+      {id:4,code:'BLT-M10',sku:'SKU-M10',barcode:'1000000004',name:'Bolt M10',desc:'Hex bolt M10x50',categoryId:3,subcategory:'Bolts',unit:'pcs',minStock:100,maxStock:5000,reorderLevel:300,unitCost:8,warehouse:'Main Warehouse',building:'B',rack:'R-01',shelf:'S-03',bin:'B-01',supplierId:3,status:'Active',createdAt:'2024-01-01',updatedAt:'2024-01-01'},
+      {id:5,code:'WLD-ELC',sku:'SKU-WLD',barcode:'1000000005',name:'Welding Electrode',desc:'Welding electrode 3.2mm',categoryId:4,subcategory:'Welding',unit:'kg',minStock:50,maxStock:1000,reorderLevel:100,unitCost:220,warehouse:'Main Warehouse',building:'B',rack:'R-02',shelf:'S-01',bin:'B-04',supplierId:4,status:'Active',createdAt:'2024-01-01',updatedAt:'2024-01-01'},
+    ],
+    categories:[
+      {id:1,name:'Bearings',subcategories:['Ball Bearings','Roller Bearings']},
+      {id:2,name:'Belts',subcategories:['V-Belts','Timing Belts']},
+      {id:3,name:'Fasteners',subcategories:['Bolts','Nuts','Washers']},
+      {id:4,name:'Consumables',subcategories:['Welding','Lubricants']},
+    ],
+    units:['pcs','kg','m','L','box','roll','set'],
+    suppliers:[
+      {id:1,name:'Addis Bearing Supply',contact:'+251-911-111111',email:'sales@abs.et',address:'Addis Ababa'},
+      {id:2,name:'Ethio Industrial Parts',contact:'+251-911-222222',email:'info@eip.et',address:'Adama'},
+      {id:3,name:'Fastener House PLC',contact:'+251-911-333333',email:'fh@example.et',address:'Addis Ababa'},
+      {id:4,name:'WeldPro Ethiopia',contact:'+251-911-444444',email:'sales@weldpro.et',address:'Hawassa'},
+    ],
+    departments:[
+      {id:1,name:'Maintenance'},{id:2,name:'Production'},{id:3,name:'Workshop'},
+      {id:4,name:'Project Alpha'},{id:5,name:'Project Beta'},{id:6,name:'Branch - Adama'},
+    ],
+    transactions:[],
+    auditLogs:[],
+    notifications:[],
+    settings:{
+      company:'Ethiopian Warehouse Co.',address:'Addis Ababa, Ethiopia',phone:'+251-11-XXX-XXXX',
+      currency:'ETB',dateFormat:'YYYY-MM-DD',slaHours:24,allowNegativeStock:false,
+      approvalRules:{
+        STOCK_IN:{enabled:true,qtyThreshold:0,valueThreshold:0,level1Role:'warehouse_manager'},
+        STOCK_OUT:{enabled:true,qtyThreshold:100,valueThreshold:50000,level1Role:'warehouse_manager'},
+        ADJUSTMENT:{enabled:true,qtyThreshold:10,valueThreshold:0,level1Role:'warehouse_manager'},
+      }
+    },
+    seq:{IN:1,OUT:1,ADJ:1,OPEN:1}
+  };
+}
+
+let db;
+function loadDB(){ try{const r=localStorage.getItem(DB_KEY);if(r)return JSON.parse(r);}catch(e){} const d=defaultDB();localStorage.setItem(DB_KEY,JSON.stringify(d));return d; }
+function saveDB(){ localStorage.setItem(DB_KEY,JSON.stringify(db)); }
+
+db = loadDB();
+seedSampleTransactions();
+
+/* ========================================================================
+   SEED SAMPLE TRANSACTIONS (only if none exist)
+   ======================================================================== */
+function seedSampleTransactions(){
+  if(db.transactions && db.transactions.length > 0) return;
+  const now = Date.now();
+  const day = 86400000;
+  const t = (offset, h=9) => new Date(now - offset*day + h*3600000).toISOString();
+  const d = (offset) => new Date(now - offset*day).toISOString().slice(0,10);
+
+  // Opening balances (approved)
+  db.transactions.push({
+    id:'seed-open', number:'OPEN-00001', type:'OPENING', date:d(30),
+    notes:'Initial opening balances', items:[
+      {itemId:1, qty:1000, unitCost:500, unit:'pcs'},
+      {itemId:2, qty:500, unitCost:650, unit:'pcs'},
+      {itemId:3, qty:300, unitCost:180, unit:'pcs'},
+      {itemId:4, qty:5000, unitCost:8, unit:'pcs'},
+      {itemId:5, qty:800, unitCost:220, unit:'kg'},
+    ],
+    status:'Approved', requestedBy:1, createdAt:t(30), submittedAt:t(30), approvedAt:t(30), approvedBy:2,
+    approvalHistory:[
+      {date:t(30),userId:1,userName:'System Admin',action:'Created',comment:'Opening balances'},
+      {date:t(30),userId:2,userName:'Abebe Manager',action:'Approved',comment:'Initial setup'}
+    ]
+  });
+
+  // Approved Stock IN
+  db.transactions.push({
+    id:'seed-in-1', number:'IN-00001', type:'STOCK_IN', date:d(10),
+    supplierId:1, reference:'GRN-001', invoice:'INV-2231', notes:'Regular bearing restock',
+    items:[
+      {itemId:1, qty:200, unitCost:500, unit:'pcs', batch:'B-001'},
+      {itemId:2, qty:150, unitCost:650, unit:'pcs', batch:'B-002'},
+    ],
+    status:'Approved', requestedBy:3, createdAt:t(10), submittedAt:t(10), approvedAt:t(10,11), approvedBy:2,
+    approvalHistory:[
+      {date:t(10,9),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(10,9),userId:3,userName:'John Storekeeper',action:'Submitted',comment:''},
+      {date:t(10,11),userId:2,userName:'Abebe Manager',action:'Approved',comment:'Verified against delivery note'}
+    ]
+  });
+
+  // Approved Stock OUT
+  db.transactions.push({
+    id:'seed-out-1', number:'OUT-00001', type:'STOCK_OUT', date:d(7),
+    departmentId:1, recipient:'Maintenance Team', reference:'REQ-101', purpose:'Routine maintenance',
+    items:[{itemId:1, qty:50, unitCost:500, unit:'pcs'}],
+    status:'Approved', requestedBy:3, createdAt:t(7), submittedAt:t(7), approvedAt:t(7,14), approvedBy:2,
+    approvalHistory:[
+      {date:t(7,9),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(7,9),userId:3,userName:'John Storekeeper',action:'Submitted',comment:''},
+      {date:t(7,14),userId:2,userName:'Abebe Manager',action:'Approved',comment:'Approved for maintenance'}
+    ]
+  });
+
+  // Pending Stock IN
+  db.transactions.push({
+    id:'seed-in-2', number:'IN-00002', type:'STOCK_IN', date:d(1),
+    supplierId:2, reference:'GRN-002', notes:'Urgent restock',
+    items:[{itemId:3, qty:100, unitCost:180, unit:'pcs'}],
+    status:'Pending Approval', requestedBy:3, createdAt:t(1), submittedAt:t(1), requiredRole:'warehouse_manager', approvalLevel:1,
+    approvalHistory:[
+      {date:t(1),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(1),userId:3,userName:'John Storekeeper',action:'Submitted',comment:'Urgent'}
+    ]
+  });
+
+  // Pending Stock OUT (large → needs manager)
+  db.transactions.push({
+    id:'seed-out-2', number:'OUT-00002', type:'STOCK_OUT', date:d(0),
+    departmentId:2, recipient:'Production Line A', reference:'REQ-205', purpose:'Production batch #45',
+    items:[
+      {itemId:4, qty:500, unitCost:8, unit:'pcs'},
+      {itemId:5, qty:80, unitCost:220, unit:'kg'}
+    ],
+    status:'Pending Approval', requestedBy:3, createdAt:t(0,8), submittedAt:t(0,8), requiredRole:'warehouse_manager', approvalLevel:1,
+    approvalHistory:[
+      {date:t(0,8),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(0,8),userId:3,userName:'John Storekeeper',action:'Submitted',comment:'Production urgent'}
+    ]
+  });
+
+  // Pending Adjustment
+  db.transactions.push({
+    id:'seed-adj-1', number:'ADJ-00001', type:'ADJUSTMENT_OUT', date:d(0),
+    reason:'Physical count difference', notes:'4 damaged bearings found during count',
+    adjSystem:800, adjPhysical:796, adjDiff:-4,
+    items:[{itemId:2, qty:4, unitCost:650, unit:'pcs'}],
+    status:'Pending Approval', requestedBy:3, createdAt:t(0,7), submittedAt:t(0,7), requiredRole:'warehouse_manager', approvalLevel:1,
+    approvalHistory:[
+      {date:t(0,7),userId:3,userName:'John Storekeeper',action:'Created',comment:'System 800 → Physical 796'},
+      {date:t(0,7),userId:3,userName:'John Storekeeper',action:'Submitted',comment:'Found damaged units'}
+    ]
+  });
+
+  // Rejected
+  db.transactions.push({
+    id:'seed-out-3', number:'OUT-00003', type:'STOCK_OUT', date:d(3),
+    departmentId:3, recipient:'Workshop', reference:'REQ-140', purpose:'Workshop tools',
+    items:[{itemId:1, qty:10, unitCost:500, unit:'pcs'}],
+    status:'Rejected', requestedBy:3, createdAt:t(3), submittedAt:t(3), rejectedAt:t(3,10), rejectedBy:2,
+    rejectionReason:'Quantity does not match warehouse request form.',
+    approvalHistory:[
+      {date:t(3,9),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(3,9),userId:3,userName:'John Storekeeper',action:'Submitted',comment:''},
+      {date:t(3,10),userId:2,userName:'Abebe Manager',action:'Rejected',comment:'Quantity does not match warehouse request form.'}
+    ]
+  });
+
+  // Needs Correction
+  db.transactions.push({
+    id:'seed-in-3', number:'IN-00003', type:'STOCK_IN', date:d(2),
+    supplierId:3, reference:'GRN-003', notes:'Fasteners order',
+    items:[{itemId:4, qty:2000, unitCost:8, unit:'pcs'}],
+    status:'Needs Correction', requestedBy:3, createdAt:t(2), submittedAt:t(2),
+    approvalHistory:[
+      {date:t(2,9),userId:3,userName:'John Storekeeper',action:'Created',comment:''},
+      {date:t(2,9),userId:3,userName:'John Storekeeper',action:'Submitted',comment:''},
+      {date:t(2,11),userId:2,userName:'Abebe Manager',action:'Returned',comment:'Please attach the delivery note and correct the quantity.'}
+    ]
+  });
+
+  saveDB();
+}
+
+/* ========================================================================
+   API LAYER — simulates a secure REST backend.
+   Every call validates: token → role → permission → action.
+   ======================================================================== */
+
+const SESSIONS = {}; // token -> { userId, role, expiresAt }
+
+function genToken(){ return 'tok_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+// ---- Permission matrix (server-side source of truth) ----
+const ROLE_PERMS = {
+  super_admin:[
+    '*'
+  ],
+  warehouse_manager:[
+    'MANAGER_DASHBOARD_VIEW',
+    'APPROVALS_VIEW',
+    'APPROVALS_APPROVE',
+    'APPROVALS_REJECT',
+    'APPROVALS_RETURN',
+    'APPROVAL_HISTORY_VIEW',
+    'TRANSACTION_DETAILS_VIEW',
+    'REVERSAL_APPROVE',
+  ],
+  storekeeper:[],
+  auditor:[]
+};
+
+function hasPermission(user, perm){
+  const p = ROLE_PERMS[user.role] || [];
+  return p.includes('*') || p.includes(perm);
+}
+
+// ---- Simulated response helpers ----
+function ok(data){ return {success:true, data}; }
+function err(code, error, message){ return {success:false, status:code, error, message}; }
+
+// ---- Authentication ----
+const Auth = {
+  login(username, password){
+    const user = db.users.find(u => u.username === username && u.password === password);
+    if(!user) return err(401,'INVALID_CREDENTIALS','Invalid username or password.');
+    if(!user.active) return err(403,'ACCOUNT_INACTIVE','This account is inactive.');
+    // Manager portal: only allow manager / super admin
+    if(user.role !== 'warehouse_manager' && user.role !== 'super_admin'){
+      return err(403,'ROLE_NOT_ALLOWED','This portal is restricted to Warehouse Managers.');
+    }
+    const token = genToken();
+    SESSIONS[token] = { userId:user.id, role:user.role, createdAt:Date.now() };
+    logAudit('LOGIN', user.id, user.name, {note:`Manager portal login from ${location.host||'local'}`});
+    return ok({token, user:{id:user.id, name:user.name, username:user.username, role:user.role}});
+  },
+  me(token){
+    const s = SESSIONS[token];
+    if(!s) return err(401,'NOT_AUTHENTICATED','Invalid or expired session.');
+    const u = db.users.find(x => x.id === s.userId);
+    if(!u) return err(401,'NOT_AUTHENTICATED','User no longer exists.');
+    return ok({id:u.id, name:u.name, username:u.username, role:u.role, permissions:ROLE_PERMS[u.role]||[]});
+  },
+  logout(token){
+    const s = SESSIONS[token];
+    if(s){
+      const u = db.users.find(x=>x.id===s.userId);
+      if(u) logAudit('LOGOUT', u.id, u.name, {});
+    }
+    delete SESSIONS[token];
+    return ok({loggedOut:true});
+  }
+};
+
+// ---- Middleware ----
+function requireAuth(token, perm){
+  const me = Auth.me(token);
+  if(!me.success) return me;
+  if(perm && !hasPermission(me.data, perm)){
+    return err(403,'FORBIDDEN',`Missing permission: ${perm}`);
+  }
+  return me;
+}
+
+/* ========================================================================
+   INVENTORY HELPERS (transactional calculation)
+   ======================================================================== */
+function getStock(itemId, includePending=false){
+  let qty = 0;
+  db.transactions.forEach(t => {
+    const applies = t.status === 'Approved';
+    const reserved = includePending && (t.status==='Pending Approval');
+    if(!applies && !reserved) return;
+    t.items.forEach(l => {
+      if(l.itemId !== itemId) return;
+      if(['STOCK_IN','OPENING','ADJUSTMENT_IN'].includes(t.type)) qty += l.qty;
+      else if(['STOCK_OUT','ADJUSTMENT_OUT'].includes(t.type)) qty -= l.qty;
+    });
+  });
+  return qty;
+}
+function getPendingOut(itemId){
+  let qty = 0;
+  db.transactions.forEach(t => {
+    if(t.status !== 'Pending Approval') return;
+    if(t.type !== 'STOCK_OUT' && t.type !== 'ADJUSTMENT_OUT') return;
+    t.items.forEach(l => { if(l.itemId === itemId) qty += l.qty; });
+  });
+  return qty;
+}
+function getItem(id){ return db.items.find(i=>i.id===id); }
+function getSupplier(id){ return db.suppliers.find(s=>s.id===id); }
+function getDepartment(id){ return db.departments.find(d=>d.id===id); }
+function getUser(id){ return db.users.find(u=>u.id===id); }
+function getCategory(id){ return db.categories.find(c=>c.id===id); }
+
+/* ========================================================================
+   AUDIT LOG (append-only)
+   ======================================================================== */
+function logAudit(action, userId, userName, details={}){
+  db.auditLogs.unshift({
+    id:'log_'+Math.random().toString(36).slice(2),
+    timestamp:new Date().toISOString(),
+    userId, userName, action,
+    txnNumber:details.txnNumber||'',
+    itemId:details.itemId||'',
+    itemName:details.itemName||'',
+    oldQty:details.oldQty ?? '',
+    newQty:details.newQty ?? '',
+    note:details.note||'',
+    ip:'local'
+  });
+  if(db.auditLogs.length > 20000) db.auditLogs.length = 20000;
+  saveDB();
+}
+
+/* ========================================================================
+   MANAGER API — server-side enforcement of approval actions
+   ======================================================================== */
+const ManagerAPI = {
+  dashboard(token){
+    const auth = requireAuth(token,'MANAGER_DASHBOARD_VIEW');
+    if(!auth.success) return auth;
+
+    const today = new Date().toISOString().slice(0,10);
+    const pending = db.transactions.filter(t => t.status === 'Pending Approval');
+    const overdue = pending.filter(t => {
+      const hrs = (Date.now() - new Date(t.submittedAt||t.createdAt)) / 3600000;
+      return hrs > db.settings.slaHours;
+    });
+    const approvedToday = db.transactions.filter(t => {
+      const a = t.approvedAt ? t.approvedAt.slice(0,10) : null;
+      return a === today;
+    });
+    const rejectedToday = db.transactions.filter(t => {
+      const r = t.rejectedAt ? t.rejectedAt.slice(0,10) : null;
+      return r === today;
+    });
+    const returnedCount = db.transactions.filter(t => t.status === 'Needs Correction').length;
+
+    // Total value waiting
+    const pendingValue = pending.reduce((s,t) => s + t.items.reduce((a,i)=>a+i.qty*i.unitCost,0), 0);
+
+    return ok({
+      pending: pending.length,
+      approvedToday: approvedToday.length,
+      rejectedToday: rejectedToday.length,
+      returned: returnedCount,
+      overdue: overdue.length,
+      pendingValue
+    });
+  },
+
+  listPending(token, filter={}){
+    const auth = requireAuth(token,'APPROVALS_VIEW');
+    if(!auth.success) return auth;
+    let rows = db.transactions.filter(t => t.status === 'Pending Approval');
+    if(filter.type) rows = rows.filter(t => t.type === filter.type);
+    rows.sort((a,b) => new Date(a.submittedAt||a.createdAt) - new Date(b.submittedAt||b.createdAt));
+    return ok(rows.map(t => summarizeForManager(t)));
+  },
+
+  getTransaction(token, txnId){
+    const auth = requireAuth(token,'TRANSACTION_DETAILS_VIEW');
+    if(!auth.success) return auth;
+    const t = db.transactions.find(x => x.id === txnId);
+    if(!t) return err(404,'TRANSACTION_NOT_FOUND','Transaction does not exist.');
+    return ok(buildManagerView(t));
+  },
+
+  approve(token, txnId, comment=''){
+    const auth = requireAuth(token,'APPROVALS_APPROVE');
+    if(!auth.success) return auth;
+    const user = db.users.find(u=>u.id===auth.data.id);
+
+    // Atomic re-check inside "transaction"
+    const t = db.transactions.find(x=>x.id===txnId);
+    if(!t) return err(404,'TRANSACTION_NOT_FOUND','Transaction not found.');
+    if(t.status !== 'Pending Approval') return err(409,'INVALID_STATUS','Only pending transactions can be approved.');
+    // Rule 1 — No self approval
+    if(t.requestedBy === user.id) return err(403,'SELF_APPROVAL','You cannot approve your own transaction.');
+
+    // Rule 10 — Stock re-check for OUT
+    if(t.type === 'STOCK_OUT'){
+      for(const line of t.items){
+        const available = getStock(line.itemId);
+        if(!db.settings.allowNegativeStock && line.qty > available){
+          const item = getItem(line.itemId);
+          return err(409,'INSUFFICIENT_STOCK',`Insufficient stock for ${item?.name||'item'}: available ${available}, requested ${line.qty}`);
+        }
+      }
+    }
+
+    // Snapshot old quantities for audit
+    const snapshots = {};
+    t.items.forEach(l => snapshots[l.itemId] = getStock(l.itemId));
+
+    // Apply
+    t.status = 'Approved';
+    t.approvedAt = new Date().toISOString();
+    t.approvedBy = user.id;
+    t.approvalComment = comment;
+    t.approvalHistory = t.approvalHistory || [];
+    t.approvalHistory.push({
+      date:t.approvedAt, userId:user.id, userName:user.name,
+      action:'Approved', comment:comment||''
+    });
+
+    // Update weighted average cost on Stock IN
+    if(t.type === 'STOCK_IN' || t.type === 'OPENING'){
+      t.items.forEach(line => {
+        const item = getItem(line.itemId);
+        if(!item) return;
+        const before = snapshots[line.itemId];
+        const beforeVal = before * (item.unitCost||0);
+        const after = before + line.qty;
+        const afterVal = beforeVal + line.qty*(line.unitCost||0);
+        if(after>0){ item.unitCost = +(afterVal/after).toFixed(2); item.updatedAt = new Date().toISOString(); }
+      });
+    }
+
+    // Audit log
+    logAudit('APPROVED_'+t.type, user.id, user.name, {
+      txnNumber:t.number, note:`Approved ${t.items.length} item(s). ${comment?('Comment: '+comment):''}`
+    });
+    t.items.forEach(l => {
+      logAudit(`INVENTORY_CHANGE`, user.id, user.name, {
+        txnNumber:t.number, itemId:l.itemId, itemName:getItem(l.itemId)?.name||'',
+        oldQty:snapshots[l.itemId], newQty:getStock(l.itemId)
+      });
+    });
+
+    // Notify requester
+    pushNotification(t.requestedBy, 'Transaction Approved',
+      `${t.number} approved by ${user.name}.`, t.number);
+
+    saveDB();
+    return ok({id:t.id, status:t.status});
+  },
+
+  reject(token, txnId, reason){
+    const auth = requireAuth(token,'APPROVALS_REJECT');
+    if(!auth.success) return auth;
+    if(!reason || !reason.trim()) return err(422,'REASON_REQUIRED','Rejection reason is required.');
+    const user = db.users.find(u=>u.id===auth.data.id);
+    const t = db.transactions.find(x=>x.id===txnId);
+    if(!t) return err(404,'TRANSACTION_NOT_FOUND','Transaction not found.');
+    if(t.status !== 'Pending Approval') return err(409,'INVALID_STATUS','Only pending transactions can be rejected.');
+    if(t.requestedBy === user.id) return err(403,'SELF_APPROVAL','You cannot reject your own transaction.');
+
+    t.status = 'Rejected';
+    t.rejectedAt = new Date().toISOString();
+    t.rejectedBy = user.id;
+    t.rejectionReason = reason;
+    t.approvalHistory = t.approvalHistory || [];
+    t.approvalHistory.push({
+      date:t.rejectedAt, userId:user.id, userName:user.name,
+      action:'Rejected', comment:reason
+    });
+
+    logAudit('REJECTED_'+t.type, user.id, user.name, {txnNumber:t.number, note:reason});
+    pushNotification(t.requestedBy, 'Transaction Rejected', `${t.number} rejected: ${reason}`, t.number);
+    saveDB();
+    return ok({id:t.id, status:t.status});
+  },
+
+  returnForCorrection(token, txnId, comment){
+    const auth = requireAuth(token,'APPROVALS_RETURN');
+    if(!auth.success) return auth;
+    if(!comment || !comment.trim()) return err(422,'COMMENT_REQUIRED','Return comment is required.');
+    const user = db.users.find(u=>u.id===auth.data.id);
+    const t = db.transactions.find(x=>x.id===txnId);
+    if(!t) return err(404,'TRANSACTION_NOT_FOUND','Transaction not found.');
+    if(t.status !== 'Pending Approval') return err(409,'INVALID_STATUS','Only pending transactions can be returned.');
+
+    t.status = 'Needs Correction';
+    t.returnedAt = new Date().toISOString();
+    t.returnedBy = user.id;
+    t.correctionComment = comment;
+    t.approvalHistory = t.approvalHistory || [];
+    t.approvalHistory.push({
+      date:t.returnedAt, userId:user.id, userName:user.name,
+      action:'Returned for Correction', comment
+    });
+
+    logAudit('RETURNED_'+t.type, user.id, user.name, {txnNumber:t.number, note:comment});
+    pushNotification(t.requestedBy, 'Transaction Returned',
+      `${t.number} returned: ${comment}`, t.number);
+    saveDB();
+    return ok({id:t.id, status:t.status});
+  },
+
+  approvalHistory(token, filters={}){
+    const auth = requireAuth(token,'APPROVAL_HISTORY_VIEW');
+    if(!auth.success) return auth;
+    // Decisions made by any manager (super_admin or warehouse_manager)
+    let rows = [];
+    db.transactions.forEach(t => {
+      (t.approvalHistory||[]).forEach(h => {
+        // Only include decisions (Approved/Rejected/Returned/Reversed) by manager roles
+        const u = db.users.find(x => x.id === h.userId);
+        if(!u) return;
+        if(!['super_admin','warehouse_manager'].includes(u.role)) return;
+        if(!['Approved','Rejected','Returned for Correction','Returned','Reversed'].includes(h.action)) return;
+        rows.push({
+          txnId:t.id, txnNumber:t.number, txnType:t.type,
+          requestedBy: getUser(t.requestedBy)?.name || '-',
+          decision:h.action, manager:h.userName, date:h.date, comment:h.comment||''
+        });
+      });
+    });
+    // Filters
+    if(filters.type) rows = rows.filter(r => r.txnType === filters.type);
+    if(filters.decision) rows = rows.filter(r => r.decision === filters.decision);
+    if(filters.requester){
+      const q = filters.requester.toLowerCase();
+      rows = rows.filter(r => r.requestedBy.toLowerCase().includes(q));
+    }
+    if(filters.from) rows = rows.filter(r => r.date.slice(0,10) >= filters.from);
+    if(filters.to) rows = rows.filter(r => r.date.slice(0,10) <= filters.to);
+    if(filters.range){
+      const now = new Date();
+      const days = {today:0,week:7,month:30}[filters.range];
+      if(days !== undefined){
+        const since = new Date(now); since.setDate(now.getDate()-days);
+        rows = rows.filter(r => new Date(r.date) >= since);
+      }
+    }
+    rows.sort((a,b)=> new Date(b.date) - new Date(a.date));
+    return ok(rows);
+  },
+
+  reversalRequests(token){
+    const auth = requireAuth(token,'APPROVALS_VIEW');
+    if(!auth.success) return auth;
+    // For simplicity, we don't have a separate reversal table; treat status 'Reversal Pending' as the queue
+    return ok(db.transactions.filter(t => t.status === 'Reversal Pending').map(summarizeForManager));
+  }
+};
+
+function summarizeForManager(t){
+  const qty = t.items.reduce((s,i)=>s+i.qty,0);
+  const val = t.items.reduce((s,i)=>s+i.qty*(i.unitCost||0),0);
+  const waited = t.submittedAt ? Math.floor((Date.now()-new Date(t.submittedAt))/60000) : 0;
+  const overdue = t.submittedAt && (Date.now()-new Date(t.submittedAt)) > db.settings.slaHours*3600000;
+  return {
+    id:t.id, number:t.number, type:t.type, date:t.date,
+    requestedBy: getUser(t.requestedBy)?.name || '-',
+    department: getDepartment(t.departmentId)?.name || '',
+    supplier: getSupplier(t.supplierId)?.name || '',
+    items: t.items.length, qty, value: val,
+    status:t.status, waitedMinutes: waited, overdue
+  };
+}
+
+function buildManagerView(t){
+  const items = t.items.map(l => {
+    const item = getItem(l.itemId);
+    const current = getStock(l.itemId);
+    let after = current;
+    if(t.type === 'STOCK_IN' || t.type === 'OPENING' || t.type === 'ADJUSTMENT_IN') after = current + l.qty;
+    else if(t.type === 'STOCK_OUT' || t.type === 'ADJUSTMENT_OUT') after = current - l.qty;
+    if(t.type === 'ADJUSTMENT_IN' || t.type === 'ADJUSTMENT_OUT'){
+      // For adjustments, requested qty is |diff|; stock after = physical qty
+      after = t.adjPhysical ?? after;
+    }
+    return {
+      itemId:l.itemId, name:item?.name||'', code:item?.code||'', unit:l.unit||item?.unit||'',
+      qty:l.qty, unitCost:l.unitCost||0, total:l.qty*(l.unitCost||0),
+      currentStock: current,
+      pendingOut: getPendingOut(l.itemId),
+      location: `${item?.warehouse||''} · ${item?.rack||''}/${item?.shelf||''}/${item?.bin||''}`,
+      stockAfter: after,
+      adjSystem: t.adjSystem, adjPhysical: t.adjPhysical, adjDiff: t.adjDiff
+    };
+  });
+  return {
+    id:t.id, number:t.number, type:t.type, date:t.date, status:t.status,
+    reference:t.reference||'', invoice:t.invoice||'', purpose:t.purpose||'',
+    reason:t.reason||'', notes:t.notes||'',
+    supplier: t.supplierId ? getSupplier(t.supplierId)?.name : '',
+    department: t.departmentId ? getDepartment(t.departmentId)?.name : '',
+    recipient: t.recipient||'',
+    requestedBy: {id:t.requestedBy, name:getUser(t.requestedBy)?.name||'-', role:getUser(t.requestedBy)?.role||''},
+    submittedAt: t.submittedAt, createdAt: t.createdAt,
+    requiredRole: t.requiredRole||'warehouse_manager',
+    items,
+    approvalHistory: (t.approvalHistory||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date)),
+    totalQty: items.reduce((s,i)=>s+i.qty,0),
+    totalValue: items.reduce((s,i)=>s+i.total,0),
+    isOwn: t.requestedBy === currentUser.id
+  };
+}
+
+function pushNotification(userId, title, message, link){
+  db.notifications.unshift({id:'n_'+Math.random().toString(36).slice(2), userId, title, message, link, read:false, createdAt:new Date().toISOString()});
+  if(db.notifications.length>500) db.notifications.length = 500;
+}
+
+/* ========================================================================
+   UI LOGIC
+   ======================================================================== */
+let currentUser = null;
+let authToken = null;
+let currentPage = 'dashboard';
+let currentPendingTypeFilter = '';
+
+const ROUTES = {
+  dashboard:{ title:'Manager Dashboard', render:renderDashboard },
+  pending_in:{ title:'Stock IN Approvals', render:()=>renderPending('STOCK_IN') },
+  pending_out:{ title:'Stock OUT Approvals', render:()=>renderPending('STOCK_OUT') },
+  pending_adj:{ title:'Adjustment Approvals', render:()=>renderPending('ADJUSTMENT') },
+  reversal:{ title:'Reversal Requests', render:renderReversal },
+  history:{ title:'Approval History', render:renderHistory }
+};
+
+function buildNav(){
+  const nav = document.getElementById('nav');
+  const pending = ManagerAPI.listPending(authToken).data?.length || 0;
+  const revPending = ManagerAPI.reversalRequests(authToken).data?.length || 0;
+
+  nav.innerHTML = `
+    <div class="section">MANAGER</div>
+    <a data-page="dashboard" onclick="go('dashboard')"><span>📊</span><span>Manager Dashboard</span></a>
+    <a data-page="pending_in" onclick="go('pending_in')"><span>📥</span><span>Stock IN Approvals</span></a>
+    <a data-page="pending_out" onclick="go('pending_out')"><span>📤</span><span>Stock OUT Approvals</span></a>
+    <a data-page="pending_adj" onclick="go('pending_adj')"><span>⚖️</span><span>Adjustment Approvals</span></a>
+    <a data-page="reversal" onclick="go('reversal')"><span>↩️</span><span>Reversal Requests</span>${revPending?`<span class="badge">${revPending}</span>`:''}</a>
+    <a data-page="history" onclick="go('history')"><span>📜</span><span>Approval History</span></a>
+  `;
+}
+
+function go(page){
+  currentPage = page;
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  const r = ROUTES[page] || ROUTES.dashboard;
+  document.getElementById('pageTitle').textContent = r.title;
+  document.getElementById('content').innerHTML = '';
+  r.render(document.getElementById('content'));
+}
+
+function doLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const res = Auth.login(u, p);
+  if(!res.success){
+    const d = document.getElementById('deniedMsg');
+    d.textContent = '❌ ' + (res.message||'Login failed');
+    d.style.display = 'block';
+    return;
+  }
+  authToken = res.data.token;
+  currentUser = res.data.user;
+  localStorage.setItem('wms_manager_token', authToken);
+  enterApp();
+}
+
+function doLogout(){
+  if(authToken) Auth.logout(authToken);
+  authToken = null; currentUser = null;
+  localStorage.removeItem('wms_manager_token');
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userRole').textContent = currentUser.role === 'super_admin' ? 'Super Admin' : 'Warehouse Manager';
+  document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('brandSub').textContent = 'Approval Dashboard';
+  buildNav();
+  go('dashboard');
+}
+
+/* ========================================================================
+   DASHBOARD
+   ======================================================================== */
+function renderDashboard(c){
+  const d = ManagerAPI.dashboard(authToken).data;
+  c.innerHTML = `
+    <div class="cards">
+      <div class="card warn"><div class="label">Pending Approvals</div><div class="value">${d.pending}</div><div class="sub">${fmtMoney(d.pendingValue)} total value</div></div>
+      <div class="card success"><div class="label">Approved Today</div><div class="value">${d.approvedToday}</div><div class="sub">transactions</div></div>
+      <div class="card danger"><div class="label">Rejected Today</div><div class="value">${d.rejectedToday}</div><div class="sub">transactions</div></div>
+      <div class="card info"><div class="label">Returned for Correction</div><div class="value">${d.returned}</div><div class="sub">awaiting resubmission</div></div>
+      <div class="card danger"><div class="label">Overdue Approvals</div><div class="value">${d.overdue}</div><div class="sub">> ${db.settings.slaHours}h waiting</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h4>⏳ My Pending Approvals</h4>
+        <button class="btn sec sm" onclick="go('pending_in')">Stock IN</button>
+        <button class="btn sec sm" onclick="go('pending_out')">Stock OUT</button>
+        <button class="btn sec sm" onclick="go('pending_adj')">Adjustments</button>
+      </div>
+      <div class="panel-body p0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Number</th><th>Type</th><th>Date</th><th>Requested By</th><th>Items</th><th class="num">Qty</th><th class="num">Value</th><th>Waiting</th><th></th></tr></thead>
+            <tbody id="dashPendingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  const rows = ManagerAPI.listPending(authToken).data.slice(0,10);
+  document.getElementById('dashPendingBody').innerHTML = rows.length ? rows.map(r => `
+    <tr${r.overdue?' style="background:#fef2f2"':''}>
+      <td><b>${esc(r.number)}</b></td>
+      <td>${typePill(r.type)}</td>
+      <td>${r.date}</td>
+      <td>${esc(r.requestedBy)}</td>
+      <td>${r.items}</td>
+      <td class="num">${fmtQty(r.qty)}</td>
+      <td class="num">${fmtMoney(r.value)}</td>
+      <td>${fmtWait(r.waitedMinutes)}${r.overdue?' ⚠️':''}</td>
+      <td><button class="btn sm" onclick="openTransaction('${r.id}')">Review</button></td>
+    </tr>`).join('') : '<tr><td colspan="9" class="empty">🎉 No pending approvals</td></tr>';
+}
+
+/* ========================================================================
+   PENDING LIST
+   ======================================================================== */
+function renderPending(typeFilter){
+  // Adjustment covers both ADJUSTMENT_IN and ADJUSTMENT_OUT
+  const rows = ManagerAPI.listPending(authToken).data.filter(r => {
+    if(!typeFilter) return true;
+    if(typeFilter === 'ADJUSTMENT') return r.type === 'ADJUSTMENT_IN' || r.type === 'ADJUSTMENT_OUT';
+    return r.type === typeFilter;
+  });
+  const title = typeFilter === 'STOCK_IN' ? 'Stock IN Approvals'
+              : typeFilter === 'STOCK_OUT' ? 'Stock OUT Approvals'
+              : 'Adjustment Approvals';
+
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h4>📋 ${title} — ${rows.length} pending</h4>
+        <div class="tabs" style="margin:0">
+          <button class="${!typeFilter?'active':''}" onclick="go('dashboard')">All</button>
+          <button class="${typeFilter==='STOCK_IN'?'active':''}" onclick="go('pending_in')">Stock IN</button>
+          <button class="${typeFilter==='STOCK_OUT'?'active':''}" onclick="go('pending_out')">Stock OUT</button>
+          <button class="${typeFilter==='ADJUSTMENT'?'active':''}" onclick="go('pending_adj')">Adjustments</button>
+        </div>
+      </div>
+      <div class="panel-body p0">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Transaction No.</th><th>Type</th><th>Date</th><th>Requested By</th>
+                <th>Dept / Supplier</th><th class="num">Items</th><th class="num">Qty</th>
+                <th class="num">Value</th><th>Waiting</th><th>Status</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.map(r => `
+                <tr${r.overdue?' style="background:#fef2f2"':''}>
+                  <td><b>${esc(r.number)}</b></td>
+                  <td>${typePill(r.type)}</td>
+                  <td>${r.date}</td>
+                  <td>${esc(r.requestedBy)}</td>
+                  <td>${esc(r.department || r.supplier || '-')}</td>
+                  <td class="num">${r.items}</td>
+                  <td class="num">${fmtQty(r.qty)}</td>
+                  <td class="num">${fmtMoney(r.value)}</td>
+                  <td>${fmtWait(r.waitedMinutes)}${r.overdue?' ⚠️':''}</td>
+                  <td>${statusPill(r.status)}</td>
+                  <td style="white-space:nowrap">
+                    <button class="btn sec sm" onclick="openTransaction('${r.id}')">View</button>
+                    <button class="btn success sm" onclick="quickApprove('${r.id}')">✓</button>
+                    <button class="btn danger sm" onclick="quickReject('${r.id}')">✕</button>
+                    <button class="btn warn sm" onclick="quickReturn('${r.id}')">↩</button>
+                  </td>
+                </tr>`).join('') : '<tr><td colspan="11" class="empty">🎉 No pending items in this category</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderReversal(c){
+  const rows = ManagerAPI.reversalRequests(authToken).data || [];
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h4>↩️ Reversal Requests</h4></div>
+      <div class="panel-body p0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Number</th><th>Type</th><th>Date</th><th>Requested By</th><th class="num">Qty</th><th class="num">Value</th><th>Waiting</th><th>Action</th></tr></thead>
+            <tbody>
+              ${rows.length ? rows.map(r => `
+                <tr>
+                  <td><b>${esc(r.number)}</b></td>
+                  <td>${typePill(r.type)}</td>
+                  <td>${r.date}</td>
+                  <td>${esc(r.requestedBy)}</td>
+                  <td class="num">${fmtQty(r.qty)}</td>
+                  <td class="num">${fmtMoney(r.value)}</td>
+                  <td>${fmtWait(r.waitedMinutes)}</td>
+                  <td><button class="btn sec sm" onclick="openTransaction('${r.id}')">View</button></td>
+                </tr>`).join('') : '<tr><td colspan="8" class="empty">No reversal requests pending</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ========================================================================
+   APPROVAL HISTORY (Manager decisions)
+   ======================================================================== */
+function renderHistory(c){
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h4>📜 Approval History</h4></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field"><label>Date Range</label>
+            <select id="h_range">
+              <option value="">All</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="field" id="h_custom_from_wrap" style="display:none">
+            <label>From</label><input type="date" id="h_from">
+          </div>
+          <div class="field" id="h_custom_to_wrap" style="display:none">
+            <label>To</label><input type="date" id="h_to">
+          </div>
+          <div class="field"><label>Transaction Type</label>
+            <select id="h_type">
+              <option value="">All</option>
+              <option value="STOCK_IN">Stock IN</option>
+              <option value="STOCK_OUT">Stock OUT</option>
+              <option value="ADJUSTMENT_IN">Adjustment IN</option>
+              <option value="ADJUSTMENT_OUT">Adjustment OUT</option>
+            </select>
+          </div>
+          <div class="field"><label>Decision</label>
+            <select id="h_decision">
+              <option value="">All</option>
+              <option>Approved</option><option>Rejected</option>
+              <option>Returned for Correction</option><option>Reversed</option>
+            </select>
+          </div>
+          <div class="field"><label>Requester</label><input id="h_requester" placeholder="Name..."></div>
+          <div class="field" style="justify-content:flex-end">
+            <button class="btn" onclick="applyHistoryFilters()">Apply</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-body p0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Transaction</th><th>Type</th><th>Requested By</th><th>Decision</th><th>Manager</th><th>Comment</th></tr></thead>
+            <tbody id="hBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('h_range').addEventListener('change', e => {
+    const custom = e.target.value === 'custom';
+    document.getElementById('h_custom_from_wrap').style.display = custom ? 'flex' : 'none';
+    document.getElementById('h_custom_to_wrap').style.display = custom ? 'flex' : 'none';
+    if(!custom) applyHistoryFilters();
+  });
+  applyHistoryFilters();
+}
+function applyHistoryFilters(){
+  const range = document.getElementById('h_range').value;
+  const type = document.getElementById('h_type').value;
+  const decision = document.getElementById('h_decision').value;
+  const requester = document.getElementById('h_requester').value.trim();
+  const from = document.getElementById('h_from').value;
+  const to = document.getElementById('h_to').value;
+  const filters = {range, type, decision, requester};
+  if(range === 'custom'){ filters.from = from; filters.to = to; delete filters.range; }
+  const res = ManagerAPI.approvalHistory(authToken, filters);
+  const rows = res.data || [];
+  document.getElementById('hBody').innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td>${fmtDateTime(r.date)}</td>
+      <td><b>${esc(r.txnNumber)}</b></td>
+      <td>${typePill(r.txnType)}</td>
+      <td>${esc(r.requestedBy)}</td>
+      <td>${decisionPill(r.decision)}</td>
+      <td>${esc(r.manager)}</td>
+      <td style="color:var(--muted);font-size:12.5px">${esc(r.comment||'')}</td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">No decisions match the filters</td></tr>';
+}
+
+/* ========================================================================
+   TRANSACTION DETAILS MODAL
+   ======================================================================== */
+function openTransaction(id){
+  const res = ManagerAPI.getTransaction(authToken, id);
+  if(!res.success){ toast(res.message,'error'); return; }
+  const t = res.data;
+  const waitingMin = t.submittedAt ? Math.floor((Date.now()-new Date(t.submittedAt))/60000) : 0;
+  const overdue = waitingMin > db.settings.slaHours * 60;
+
+  openModal(`
+    <div class="modal-head">
+      <h4>${typePill(t.type)} ${esc(t.number)} ${statusPill(t.status)}</h4>
+      <button class="x-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      ${t.isOwn ? `<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;font-size:12.5px;margin-bottom:14px">
+        ⚠️ You are the requester of this transaction. Per policy, you cannot approve or reject your own transaction.
+      </div>`:''}
+      ${overdue ? `<div style="background:#fef3c7;color:#92400e;padding:10px;border-radius:8px;font-size:12.5px;margin-bottom:14px">
+        ⏰ This transaction has been waiting for <b>${fmtWait(waitingMin)}</b> — SLA is ${db.settings.slaHours}h.
+      </div>`:''}
+
+      <div class="panel">
+        <div class="panel-head"><h4>Transaction Information</h4></div>
+        <div class="panel-body">
+          <div class="stat-row"><span>Date</span><b>${fmtDate(t.date)}</b></div>
+          <div class="stat-row"><span>Requested By</span><b>${esc(t.requestedBy.name)} (${esc(t.requestedBy.role)})</b></div>
+          <div class="stat-row"><span>Submitted</span><b>${fmtDateTime(t.submittedAt)}</b></div>
+          ${t.supplier?`<div class="stat-row"><span>Supplier</span><b>${esc(t.supplier)}</b></div>`:''}
+          ${t.department?`<div class="stat-row"><span>Department</span><b>${esc(t.department)}</b></div>`:''}
+          ${t.recipient?`<div class="stat-row"><span>Recipient</span><b>${esc(t.recipient)}</b></div>`:''}
+          ${t.reference?`<div class="stat-row"><span>Reference</span><b>${esc(t.reference)}</b></div>`:''}
+          ${t.invoice?`<div class="stat-row"><span>Invoice / Delivery No.</span><b>${esc(t.invoice)}</b></div>`:''}
+          ${t.purpose?`<div class="stat-row"><span>Purpose</span><b>${esc(t.purpose)}</b></div>`:''}
+          ${t.reason?`<div class="stat-row"><span>Reason</span><b>${esc(t.reason)}</b></div>`:''}
+          ${t.notes?`<div class="stat-row"><span>Notes</span><b>${esc(t.notes)}</b></div>`:''}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h4>Items & Inventory Impact</h4></div>
+        <div class="panel-body p0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th><th>Location</th>
+                  <th class="num">Current Stock</th>
+                  ${t.type==='STOCK_OUT'?`<th class="num">Pending OUT</th>`:''}
+                  <th class="num">Requested</th>
+                  <th class="num">Stock After Approval</th>
+                  <th class="num">Unit Cost</th>
+                  <th class="num">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${t.items.map(i => `
+                  <tr>
+                    <td><b>${esc(i.name)}</b><br><span style="font-size:11px;color:var(--muted)">${esc(i.code)}</span></td>
+                    <td style="font-size:11.5px">${esc(i.location)}</td>
+                    <td class="num">${fmtQty(i.currentStock)} ${esc(i.unit)}</td>
+                    ${t.type==='STOCK_OUT'?`<td class="num">${fmtQty(i.pendingOut)}</td>`:''}
+                    <td class="num"><b>${fmtQty(i.qty)}</b> ${esc(i.unit)}</td>
+                    <td class="num" style="color:${i.stockAfter<i.currentStock?'#dc2626':'#16a34a'}"><b>${fmtQty(i.stockAfter)}</b></td>
+                    <td class="num">${fmt(i.unitCost)}</td>
+                    <td class="num">${fmt(i.total)}</td>
+                  </tr>`).join('')}
+                <tr><td colspan="${t.type==='STOCK_OUT'?6:5}" style="text-align:right"><b>Total</b></td><td class="num"><b>${fmt(t.totalValue)}</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      ${t.type.startsWith('ADJUSTMENT') ? `
+        <div class="panel">
+          <div class="panel-head"><h4>Adjustment Details</h4></div>
+          <div class="panel-body">
+            <div class="stat-row"><span>System Quantity</span><b>${t.items[0].adjSystem}</b></div>
+            <div class="stat-row"><span>Physical Quantity</span><b>${t.items[0].adjPhysical}</b></div>
+            <div class="stat-row"><span>Difference</span><b style="color:${t.items[0].adjDiff<0?'var(--danger)':'var(--success)'}">${t.items[0].adjDiff>0?'+':''}${t.items[0].adjDiff}</b></div>
+          </div>
+        </div>`:''}
+
+      <div class="panel">
+        <div class="panel-head"><h4>Approval History</h4></div>
+        <div class="panel-body">
+          ${t.approvalHistory.length ? t.approvalHistory.map(h => `
+            <div style="padding:9px 0;border-bottom:1px dashed var(--border);font-size:12.5px">
+              <b>${esc(h.userName)}</b> · ${esc(h.action)} · <span style="color:var(--muted)">${fmtDateTime(h.date)}</span>
+              ${h.comment?`<div style="color:var(--muted);font-size:12px;margin-top:2px">${esc(h.comment)}</div>`:''}
+            </div>`).join('') : '<div class="empty">No history</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal()">Close</button>
+      ${t.status === 'Pending Approval' && !t.isOwn ? `
+        <button class="btn warn" onclick="returnFromModal('${t.id}')">Return for Correction</button>
+        <button class="btn danger" onclick="rejectFromModal('${t.id}')">Reject</button>
+        <button class="btn success" onclick="approveFromModal('${t.id}')">Approve</button>
+      ` : t.isOwn ? `<div style="color:var(--muted);font-size:12.5px;align-self:center">You cannot approve your own transaction</div>`:''}
+    </div>
+  `);
+}
+
+function approveFromModal(id){
+  const comment = prompt('Approval comment (optional):') ?? '';
+  const res = ManagerAPI.approve(authToken, id, comment);
+  if(!res.success){ toast(res.message, 'error'); return; }
+  toast('Transaction approved ✓','success');
+  closeModal();
+  refreshNav();
+  go(currentPage);
+}
+function rejectFromModal(id){
+  const reason = prompt('Rejection reason (required):');
+  if(reason === null) return;
+  const res = ManagerAPI.reject(authToken, id, reason);
+  if(!res.success){ toast(res.message, 'error'); return; }
+  toast('Transaction rejected','warn');
+  closeModal();
+  refreshNav();
+  go(currentPage);
+}
+function returnFromModal(id){
+  const comment = prompt('Comment for the requester (required):');
+  if(comment === null) return;
+  const res = ManagerAPI.returnForCorrection(authToken, id, comment);
+  if(!res.success){ toast(res.message, 'error'); return; }
+  toast('Returned for correction','warn');
+  closeModal();
+  refreshNav();
+  go(currentPage);
+}
+
+function quickApprove(id){ openTransaction(id); setTimeout(()=>approveFromModal(id),100); }
+function quickReject(id){ openTransaction(id); setTimeout(()=>rejectFromModal(id),100); }
+function quickReturn(id){ openTransaction(id); setTimeout(()=>returnFromModal(id),100); }
+
+/* ========================================================================
+   HELPERS
+   ======================================================================== */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function fmt(n){ return (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtQty(n){ return (Number(n)||0).toLocaleString('en-US'); }
+function fmtMoney(n){ return `${db.settings.currency} ${fmt(n)}`; }
+function fmtDate(d){ if(!d) return '-'; const dt = new Date(d); return isNaN(dt)?d:dt.toISOString().slice(0,10); }
+function fmtDateTime(d){ if(!d) return '-'; const dt = new Date(d); return isNaN(dt)?d:dt.toLocaleString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function fmtWait(min){ if(min<1) return 'just now'; if(min<60) return `${min}m`; const h = Math.floor(min/60); if(h<24) return `${h}h ${min%60}m`; return `${Math.floor(h/24)}d ${h%24}h`; }
+
+function typePill(type){
+  const map = {
+    STOCK_IN:['📥','In','#dcfce7','#166534'],
+    STOCK_OUT:['📤','Out','#fee2e2','#991b1b'],
+    ADJUSTMENT_IN:['⚖️','Adj+','#dbeafe','#1e40af'],
+    ADJUSTMENT_OUT:['⚖️','Adj-','#fef3c7','#92400e'],
+    OPENING:['🏁','Opening','#e0e7ff','#3730a3'],
+  };
+  const [icon,label,bg,color] = map[type] || ['•',type,'#e2e8f0','#475569'];
+  return `<span class="pill" style="background:${bg};color:${color}">${icon} ${label}</span>`;
+}
+function statusPill(status){
+  const map = {
+    'Draft':'s-draft','Pending Approval':'s-pending','Submitted':'s-pending',
+    'Approved':'s-approved','Rejected':'s-rejected','Needs Correction':'s-correction',
+    'Reversed':'s-reversed','Cancelled':'s-rejected','Reversal Pending':'s-pending'
+  };
+  return `<span class="badge-status ${map[status]||'s-draft'}">${esc(status)}</span>`;
+}
+function decisionPill(dec){
+  const map = {
+    'Approved':'s-approved','Rejected':'s-rejected',
+    'Returned for Correction':'s-correction','Returned':'s-correction','Reversed':'s-reversed'
+  };
+  return `<span class="badge-status ${map[dec]||'s-draft'}">${esc(dec)}</span>`;
+}
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+function openModal(html){ document.getElementById('modal').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); }
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('active'); }
+function refreshNav(){ buildNav(); document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active', a.dataset.page === currentPage)); }
+
+/* ========================================================================
+   BOOT
+   ======================================================================== */
+(function boot(){
+  const saved = localStorage.getItem('wms_manager_token');
+  if(saved){
+    const me = Auth.me(saved);
+    if(me.success){ authToken = saved; currentUser = me.data; enterApp(); return; }
+    localStorage.removeItem('wms_manager_token');
+  }
+  document.getElementById('loginScreen').style.display = 'flex';
+})();
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
