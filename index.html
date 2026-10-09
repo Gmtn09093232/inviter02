@@ -6,13 +6,6 @@
 <title>Warehouse IMS — Storekeeper</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root{
@@ -22,7 +15,7 @@
     --info:#0284c7; --sidebar:#0f172a;
   }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--text); font-size: 14px; -webkit-font-smoothing: antialiased; }
+    background: var(--bg); color: var(--text); font-size: 14px; }
   button, input, select, textarea { font-family: inherit; font-size: 14px; }
   button { cursor: pointer; border: none; background: none; }
   #loginScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
@@ -65,12 +58,11 @@
   .form-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; }
   .field { display:flex; flex-direction:column; gap: 5px; }
   .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
-  input, select, textarea { width:100%; padding: 9px 11px; border:1px solid var(--border); border-radius: 8px; background:#fff; color:var(--text); outline:none; }
+  input, select, textarea { width:100%; padding: 9px 11px; border:1px solid var(--border); border-radius: 8px; background:#fff; outline:none; }
   input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,.12); }
-  .btn { display:inline-flex; align-items:center; gap:6px; padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; background: var(--primary); color:#fff; transition: .15s; }
+  .btn { display:inline-flex; align-items:center; gap:6px; padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; background: var(--primary); color:#fff; }
   .btn:hover { background: var(--primary-dark); }
   .btn.sec { background:#fff; color: var(--text); border:1px solid var(--border); }
-  .btn.sec:hover { background:#f8fafc; }
   .btn.danger { background: var(--danger); }
   .btn.warn { background: var(--warning); color:#fff; }
   .btn.success { background: var(--success); }
@@ -78,10 +70,9 @@
   .btn:disabled { opacity:.5; cursor:not-allowed; }
   .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); background:#fff; }
   table { width:100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-  th { text-align:left; padding: 10px 12px; background:#f8fafc; color: var(--muted); font-weight:600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; border-bottom:1px solid var(--border); white-space: nowrap; }
+  th { text-align:left; padding: 10px 12px; background:#f8fafc; color: var(--muted); font-weight:600; font-size: 11.5px; text-transform: uppercase; border-bottom:1px solid var(--border); white-space: nowrap; }
   td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
-  tr:hover td { background: #fafbfc; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .num { text-align: right; }
   .badge-status { display:inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   .s-normal { background:#dcfce7; color:#166534; }
   .s-low { background:#fef3c7; color:#92400e; }
@@ -95,21 +86,18 @@
   .s-reversed { background:#f3e8ff; color:#6b21a8; }
   .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.55); display:none; align-items:center; justify-content:center; z-index: 1000; padding: 14px; }
   .modal-overlay.active { display: flex; }
-  .modal { background:#fff; border-radius:14px; width:100%; max-width: 900px; max-height: 92vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,.35); }
+  .modal { background:#fff; border-radius:14px; width:100%; max-width: 900px; max-height: 92vh; display:flex; flex-direction:column; overflow:hidden; }
   .modal-head { padding: 16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap: 10px; }
   .modal-head h4 { flex:1; font-size: 15.5px; }
   .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
   .modal-foot { padding: 14px 20px; border-top:1px solid var(--border); display:flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
   .x-btn { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; font-size: 18px; color: var(--muted); }
-  .x-btn:hover { background:#f1f5f9; }
-  .filter-bar { display:flex; gap: 10px; flex-wrap: wrap; align-items:end; margin-bottom: 14px; }
-  .filter-bar .field { min-width: 150px; flex: 1; max-width: 220px; }
   .empty { text-align:center; padding: 30px; color: var(--muted); font-size: 13px; }
   .empty-state { text-align:center; padding: 50px 20px; }
   .empty-state .icon { font-size: 54px; margin-bottom: 14px; }
   .empty-state h3 { font-size: 17px; margin-bottom: 6px; }
-  .empty-state p { color: var(--muted); font-size: 13px; margin-bottom: 18px; max-width: 500px; margin-left:auto; margin-right:auto; }
-  .toast { position: fixed; bottom: 20px; right: 20px; background:#0f172a; color:#fff; padding: 12px 18px; border-radius:10px; z-index: 3000; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.3); transform: translateY(100px); opacity:0; transition: .25s; }
+  .empty-state p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background:#0f172a; color:#fff; padding: 12px 18px; border-radius:10px; z-index: 3000; font-size: 13px; transform: translateY(100px); opacity:0; transition: .25s; }
   .toast.show { transform: translateY(0); opacity:1; }
   .toast.success { background: var(--success); }
   .toast.error { background: var(--danger); }
@@ -117,38 +105,22 @@
   .pill { display:inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; background:#e2e8f0; color:#475569; font-weight: 600; }
   .mobile-nav { display: none; }
   @media (max-width: 900px) {
-    .sidebar { transform: translateX(-100%); transition: .25s; }
+    .sidebar { transform: translateX(-100%); transition:.25s; }
     .sidebar.open { transform: translateX(0); }
     .main { margin-left: 0; }
-    .content { padding: 14px; }
-    .topbar { padding: 10px 14px; }
-    .menu-btn { display:grid; }
-    .cards { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); }
-    .card .value { font-size: 18px; }
     .mobile-nav { display:grid; grid-template-columns: repeat(5,1fr); position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); z-index: 90; }
     .mobile-nav button { padding: 9px 4px; font-size: 10.5px; display:flex; flex-direction:column; align-items:center; gap: 3px; color: var(--muted); }
     .mobile-nav button.active { color: var(--primary); }
-    .mobile-nav button span:first-child { font-size: 18px; }
+    .menu-btn { display:grid; }
     .content { padding-bottom: 70px; }
   }
   .menu-btn { display:none; width:36px; height:36px; border-radius:8px; background:#f1f5f9; place-items:center; font-size:16px; }
-  @media print {
-    .sidebar,.topbar,.mobile-nav,.no-print { display:none !important; }
-    .main { margin-left:0; }
-    .panel { border:none; box-shadow: none; }
-  }
   .chart-wrap { position: relative; height: 280px; }
-  .stat-row { display:flex; justify-content:space-between; padding: 9px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
-  .stat-row:last-child { border-bottom:none; }
-  .stat-row b { font-variant-numeric: tabular-nums; }
-  .tabs { display:flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-  .tabs button { padding: 7px 13px; border-radius: 20px; font-size: 12.5px; background:#fff; border:1px solid var(--border); }
-  .tabs button.active { background: var(--primary); color:#fff; border-color: var(--primary); }
 </style>
 </head>
 <body>
 
-<!-- ==================== LOGIN ==================== -->
+<!-- ============ LOGIN ============ -->
 <div id="loginScreen">
   <div class="login-box">
     <h1>🏭 Warehouse IMS</h1>
@@ -161,14 +133,14 @@
       <label>Password</label>
       <input id="loginPass" type="password" value="store" autocomplete="current-password">
     </div>
-    <button class="btn" id="loginBtn" style="width:100%;justify-content:center" onclick="doLogin()">Sign In</button>
+    <button class="btn" style="width:100%;justify-content:center" onclick="doLogin()" id="loginBtn">Sign In</button>
     <p style="margin-top:14px;font-size:11.5px;text-align:center;color:#94a3b8">
       Demo: admin/admin · manager/manager · store/store · auditor/auditor
     </p>
   </div>
 </div>
 
-<!-- ==================== APP ==================== -->
+<!-- ============ APP ============ -->
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
@@ -177,7 +149,6 @@
     </div>
     <nav class="nav" id="nav"></nav>
   </aside>
-
   <div class="main">
     <div class="topbar">
       <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
@@ -193,7 +164,6 @@
     </div>
     <div class="content" id="content"></div>
   </div>
-
   <nav class="mobile-nav" id="mobileNav">
     <button data-page="dashboard" onclick="go('dashboard')"><span>📊</span><span>Home</span></button>
     <button data-page="stockin" onclick="go('stockin')"><span>📥</span><span>Stock IN</span></button>
@@ -212,14 +182,16 @@
 /* ============================================================================
    SUPABASE CONFIG — replace with your own project credentials
    ============================================================================ */
-const SUPABASE_URL     = process.env.SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
-
+const SUPABASE_URL      = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const EMAIL_DOMAIN      = '@wms.local';   // username@wms.local
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============================================================================
    IN-MEMORY CACHE
+   Data is fetched from Supabase into these arrays for fast UI rendering.
+   Every write goes to Supabase first, then the cache refreshes.
    ============================================================================ */
 const db = {
   user: null,
@@ -228,8 +200,8 @@ const db = {
   suppliers: [],
   departments: [],
   transactions: [],
-  stock: [],
-  settings: { currency: 'ETB', company: 'Warehouse', slaHours: 24, allowNegativeStock: false },
+  stock: [],              // from the current_stock view
+  settings: { currency:'ETB', company:'Warehouse', slaHours:24, allowNegativeStock:false },
 };
 
 let currentPage = 'dashboard';
@@ -249,24 +221,26 @@ const today = () => new Date().toISOString().slice(0,10);
 function toast(msg, type='success'){
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
-  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2600);
+  clearTimeout(t._tid); t._tid = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('active'); }
 function openModal(html){ document.getElementById('modal').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); }
 
+// Lookups (fast, cache-based)
 const getItem       = id => db.items.find(i => i.id === id);
 const getCategory   = id => db.categories.find(c => c.id === id);
 const getSupplier   = id => db.suppliers.find(s => s.id === id);
 const getDepartment = id => db.departments.find(d => d.id === id);
 const getStockRow   = id => db.stock.find(s => s.item_id === id);
-const getStock      = id => Number(getStockRow(id)?.current_stock || 0);
+const getStock      = id => getStockRow(id)?.current_stock || 0;
+const getUser       = id => ({ name: db.transactions.find(t=>t.requested_by===id)?.requester_name || '-' });
 
 function getStockStatus(item){
   const qty = getStock(item.id);
-  if(qty <= 0) return { label: 'Out of Stock', cls: 's-out' };
-  if(qty <= Number(item.min_stock)) return { label: 'Critical', cls: 's-critical' };
-  if(qty <= Number(item.reorder_level)) return { label: 'Low Stock', cls: 's-low' };
-  return { label: 'Normal', cls: 's-normal' };
+  if(qty <= 0) return {label:'Out of Stock', cls:'s-out'};
+  if(qty <= item.min_stock) return {label:'Critical', cls:'s-critical'};
+  if(qty <= item.reorder_level) return {label:'Low Stock', cls:'s-low'};
+  return {label:'Normal', cls:'s-normal'};
 }
 
 /* ============================================================================
@@ -275,17 +249,17 @@ function getStockStatus(item){
 async function doLogin(){
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = 'Signing in…';
+  document.getElementById('loginBtn').disabled = true;
 
   const { data, error } = await sb.auth.signInWithPassword({
     email: username + EMAIL_DOMAIN,
     password,
   });
-  btn.disabled = false; btn.textContent = 'Sign In';
+  document.getElementById('loginBtn').disabled = false;
 
   if(error){ toast(error.message, 'error'); return; }
 
+  // Load profile
   const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
   if(pErr || !profile){ toast('Profile not found', 'error'); await sb.auth.signOut(); return; }
 
@@ -312,13 +286,14 @@ async function loadAll(){
     sb.from('settings').select('*'),
   ]);
 
-  db.items        = items.data || [];
-  db.categories   = cats.data || [];
-  db.suppliers    = sups.data || [];
-  db.departments  = depts.data || [];
-  db.transactions = txns.data || [];
-  db.stock        = stock.data || [];
+  db.items       = items.data || [];
+  db.categories  = cats.data || [];
+  db.suppliers   = sups.data || [];
+  db.departments = depts.data || [];
+  db.transactions= txns.data || [];
+  db.stock       = stock.data || [];
 
+  // Settings into a flat object
   const s = {};
   (settingsRows.data || []).forEach(r => s[r.key] = r.value);
   db.settings = {
@@ -330,14 +305,15 @@ async function loadAll(){
     allowNegativeStock: s.allow_negative_stock === '1',
   };
 
+  // Attach requester names to transactions (single join equivalent)
   if(db.transactions.length){
-    const ids = [...new Set(db.transactions.flatMap(t => [t.requested_by, t.approved_by].filter(Boolean)))];
-    const { data: profiles } = await sb.from('profiles').select('id,name').in('id', ids);
-    const map = {};
-    (profiles || []).forEach(p => map[p.id] = p.name);
+    const reqIds = [...new Set(db.transactions.map(t => t.requested_by))];
+    const { data: profiles } = await sb.from('profiles').select('id,name').in('id', reqIds);
+    const nameMap = {};
+    (profiles || []).forEach(p => nameMap[p.id] = p.name);
     db.transactions.forEach(t => {
-      t.requester_name = map[t.requested_by] || '-';
-      t.approver_name  = map[t.approved_by]  || '-';
+      t.requester_name = nameMap[t.requested_by] || '-';
+      t.approver_name  = nameMap[t.approved_by]  || '-';
     });
   }
 }
@@ -346,11 +322,13 @@ async function refreshStock(){
   const { data } = await sb.from('current_stock').select('*');
   db.stock = data || [];
 }
-async function refreshItems(){
+
+async function refreshItems(){ 
   const { data } = await sb.from('items').select('*').order('name');
   db.items = data || [];
   await refreshStock();
 }
+
 async function refreshTransactions(){
   const { data } = await sb.from('transactions').select('*').order('created_at',{ascending:false}).limit(500);
   db.transactions = data || [];
@@ -389,33 +367,35 @@ function can(p){
    NAV / ROUTER
    ============================================================================ */
 const NAV_ITEMS = [
-  { section:'MAIN' },
-  { page:'dashboard', label:'Dashboard', icon:'📊' },
-  { page:'setup', label:'Setup Guide', icon:'🚀', perm:'manage_items' },
+  {section:'MAIN'},
+  {page:'dashboard', label:'Dashboard', icon:'📊'},
+  {page:'setup', label:'Setup Guide', icon:'🚀', perm:'manage_items'},
 
-  { section:'MASTER DATA' },
-  { page:'items', label:'Items / Products', icon:'📦', perm:'view_items' },
-  { page:'importpdf', label:'Import PDF', icon:'📄', perm:'manage_items' },
-  { page:'categories', label:'Categories', icon:'🏷️', perm:'view_categories' },
-  { page:'suppliers', label:'Suppliers', icon:'🚚', perm:'view_suppliers' },
-  { page:'departments', label:'Departments', icon:'🏢', perm:'view_departments' },
+  {section:'MASTER DATA'},
+  {page:'items', label:'Items / Products', icon:'📦', perm:'view_items'},
+  {page:'categories', label:'Categories', icon:'🏷️', perm:'view_categories'},
+  {page:'suppliers', label:'Suppliers', icon:'🚚', perm:'view_suppliers'},
+  {page:'departments', label:'Departments', icon:'🏢', perm:'view_departments'},
 
-  { section:'OPERATIONS' },
-  { page:'stockin', label:'Stock IN', icon:'📥', perm:'view_transactions' },
-  { page:'stockout', label:'Stock OUT', icon:'📤', perm:'view_transactions' },
-  { page:'currentstock', label:'Current Stock', icon:'📋', perm:'view_stock' },
-  { page:'adjustment', label:'Stock Adjustment', icon:'⚖️', perm:'view_transactions' },
-  { page:'history', label:'Stock History', icon:'📜', perm:'view_transactions' },
+  {section:'OPERATIONS'},
+  {page:'stockin', label:'Stock IN', icon:'📥', perm:'view_transactions'},
+  {page:'stockout', label:'Stock OUT', icon:'📤', perm:'view_transactions'},
+  {page:'currentstock', label:'Current Stock', icon:'📋', perm:'view_stock'},
+  {page:'adjustment', label:'Stock Adjustment', icon:'⚖️', perm:'view_transactions'},
+  {page:'history', label:'Stock History', icon:'📜', perm:'view_transactions'},
 
-  { section:'ANALYSIS' },
-  { page:'analysis', label:'Inventory Analysis', icon:'📈', perm:'view_analysis' },
+  {section:'ANALYSIS'},
+  {page:'analysis', label:'Inventory Analysis', icon:'📈', perm:'view_analysis'},
+  {page:'fastmoving', label:'Fast-Moving', icon:'⚡', perm:'view_analysis'},
+  {page:'slowmoving', label:'Slow-Moving', icon:'🐢', perm:'view_analysis'},
+  {page:'deadstock', label:'Dead Stock', icon:'💀', perm:'view_analysis'},
 
-  { section:'REPORTS' },
-  { page:'reports', label:'Reports', icon:'📄', perm:'view_reports' },
+  {section:'REPORTS'},
+  {page:'reports', label:'Reports', icon:'📄', perm:'view_reports'},
 
-  { section:'ADMIN' },
-  { page:'audit', label:'Audit Log', icon:'🔒', perm:'view_audit' },
-  { page:'settings', label:'Settings', icon:'⚙️' },
+  {section:'ADMIN'},
+  {page:'audit', label:'Audit Log', icon:'🔒', perm:'view_audit'},
+  {page:'settings', label:'Settings', icon:'⚙️'},
 ];
 
 function buildNav(){
@@ -423,8 +403,7 @@ function buildNav(){
   nav.innerHTML = '';
   NAV_ITEMS.forEach(item => {
     if(item.section){
-      const s = document.createElement('div');
-      s.className = 'section'; s.textContent = item.section;
+      const s = document.createElement('div'); s.className='section'; s.textContent=item.section;
       nav.appendChild(s); return;
     }
     if(item.perm && !can(item.perm)) return;
@@ -440,26 +419,19 @@ function go(page){
   currentPage = page;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
   document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
-  const titles = {
-    dashboard:'Dashboard', setup:'Setup Guide',
-    items:'Items / Products', importpdf:'Import Inventory PDF',
-    categories:'Categories', suppliers:'Suppliers', departments:'Departments',
-    stockin:'Stock IN', stockout:'Stock OUT', currentstock:'Current Stock',
-    adjustment:'Stock Adjustment', history:'Stock History',
-    analysis:'Inventory Analysis', reports:'Reports',
-    audit:'Audit Log', settings:'Settings', search:'Search Item',
-  };
+  const titles = { dashboard:'Dashboard', setup:'Setup Guide', items:'Items', categories:'Categories',
+    suppliers:'Suppliers', departments:'Departments', stockin:'Stock IN', stockout:'Stock OUT',
+    currentstock:'Current Stock', adjustment:'Stock Adjustment', history:'Stock History',
+    analysis:'Inventory Analysis', fastmoving:'Fast-Moving', slowmoving:'Slow-Moving',
+    deadstock:'Dead Stock', reports:'Reports', audit:'Audit Log', settings:'Settings', search:'Search' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
   const c = document.getElementById('content');
-  const R = {
-    dashboard: renderDashboard, setup: renderSetup,
-    items: renderItems, importpdf: renderImportPDF,
+  const R = { dashboard: renderDashboard, setup: renderSetup, items: renderItems,
     categories: renderCategories, suppliers: renderSuppliers, departments: renderDepartments,
     stockin: renderStockIn, stockout: renderStockOut, currentstock: renderCurrentStock,
-    adjustment: renderAdjustment, history: renderHistory,
-    analysis: renderAnalysis, reports: renderReports,
-    audit: renderAudit, settings: renderSettings, search: renderSearch,
-  };
+    adjustment: renderAdjustment, history: renderHistory, analysis: renderAnalysis,
+    fastmoving: renderFastMoving, slowmoving: renderSlowMoving, deadstock: renderDeadStock,
+    reports: renderReports, audit: renderAudit, settings: renderSettings, search: renderSearch };
   (R[page] || renderDashboard)(c);
 }
 
@@ -478,22 +450,15 @@ function enterApp(){
    PILLS
    ============================================================================ */
 function typePill(type){
-  const map = {
-    STOCK_IN:['📥','In','#dcfce7','#166534'],
-    STOCK_OUT:['📤','Out','#fee2e2','#991b1b'],
-    ADJUSTMENT_IN:['⚖️','Adj+','#dbeafe','#1e40af'],
-    ADJUSTMENT_OUT:['⚖️','Adj-','#fef3c7','#92400e'],
-    OPENING:['🏁','Opening','#e0e7ff','#3730a3'],
-    REVERSAL:['↩️','Rev','#f3e8ff','#6b21a8'],
-  };
+  const map = { STOCK_IN:['📥','In','#dcfce7','#166534'], STOCK_OUT:['📤','Out','#fee2e2','#991b1b'],
+    ADJUSTMENT_IN:['⚖️','Adj+','#dbeafe','#1e40af'], ADJUSTMENT_OUT:['⚖️','Adj-','#fef3c7','#92400e'],
+    OPENING:['🏁','Opening','#e0e7ff','#3730a3'], REVERSAL:['↩️','Rev','#f3e8ff','#6b21a8'] };
   const [i,l,bg,c] = map[type] || ['•',type,'#e2e8f0','#475569'];
   return `<span class="pill" style="background:${bg};color:${c}">${i} ${l}</span>`;
 }
 function statusPill(s){
-  const map = {
-    Draft:'s-draft', 'Pending Approval':'s-pending', Approved:'s-approved',
-    Rejected:'s-rejected', 'Needs Correction':'s-correction', Reversed:'s-reversed',
-  };
+  const map = { Draft:'s-draft', 'Pending Approval':'s-pending', Approved:'s-approved',
+    Rejected:'s-rejected', 'Needs Correction':'s-correction', Reversed:'s-reversed' };
   return `<span class="badge-status ${map[s]||'s-draft'}">${esc(s)}</span>`;
 }
 
@@ -502,14 +467,14 @@ function statusPill(s){
    ============================================================================ */
 function renderSetup(c){
   const steps = [
-    { done: db.categories.length > 0, label:'Create Categories', desc:'Group your items.', action:"go('categories')", icon:'🏷️' },
-    { done: db.suppliers.length > 0,  label:'Add Suppliers',     desc:'Who you receive from.', action:"go('suppliers')", icon:'🚚' },
-    { done: db.departments.length > 0,label:'Add Departments',   desc:'Who you issue to.', action:"go('departments')", icon:'🏢' },
-    { done: db.items.length > 0,      label:'Create Items',      desc:'Add products, location, min levels.', action:"go('items')", icon:'📦' },
-    { done: db.transactions.some(t => t.type==='STOCK_IN' || t.type==='OPENING'), label:'Record First Stock IN', desc:'Load opening stock.', action:"go('stockin')", icon:'📥' },
+    {done: db.categories.length > 0, label:'Create Categories', desc:'Group your items.', action:"go('categories')", icon:'🏷️'},
+    {done: db.suppliers.length > 0,  label:'Add Suppliers',     desc:'Who you receive from.', action:"go('suppliers')", icon:'🚚'},
+    {done: db.departments.length > 0,label:'Add Departments',   desc:'Who you issue to.', action:"go('departments')", icon:'🏢'},
+    {done: db.items.length > 0,      label:'Create Items',      desc:'Add products, location, min levels.', action:"go('items')", icon:'📦'},
+    {done: db.transactions.some(t => t.type==='STOCK_IN'), label:'Record First Stock IN', desc:'Load opening stock.', action:"go('stockin')", icon:'📥'},
   ];
-  const done = steps.filter(s => s.done).length;
-  const pct = Math.round((done / steps.length) * 100);
+  const done = steps.filter(s=>s.done).length;
+  const pct = Math.round((done/steps.length)*100);
 
   c.innerHTML = `
     <div class="panel" style="border-left:4px solid var(--accent)">
@@ -519,28 +484,22 @@ function renderSetup(c){
           Your Supabase database is ready. Complete the steps below to build your warehouse catalogue.
         </p>
         <div style="background:#f1f5f9;height:10px;border-radius:6px;overflow:hidden;margin-bottom:6px">
-          <div style="height:100%;width:${pct}%;background:var(--primary);transition:.3s"></div>
+          <div style="height:100%;width:${pct}%;background:var(--primary)"></div>
         </div>
         <div style="font-size:12px;color:var(--muted);text-align:right">${done}/${steps.length} steps · ${pct}%</div>
       </div>
     </div>
-    ${steps.map((s, i) => `
-      <div class="panel" style="${s.done ? 'opacity:.65' : ''}">
+    ${steps.map((s,i) => `
+      <div class="panel" style="${s.done?'opacity:.65':''}">
         <div class="panel-body" style="display:flex;align-items:center;gap:16px">
           <div style="font-size:32px">${s.done ? '✅' : s.icon}</div>
           <div style="flex:1">
             <div style="font-weight:600;font-size:14.5px">${i+1}. ${esc(s.label)}</div>
             <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(s.desc)}</div>
           </div>
-          <button class="btn ${s.done ? 'sec' : ''}" onclick="${s.action}">${s.done ? 'Review' : 'Open'}</button>
+          <button class="btn ${s.done?'sec':''}" onclick="${s.action}">${s.done?'Review':'Open'}</button>
         </div>
       </div>`).join('')}
-    <div class="panel">
-      <div class="panel-head"><h4>ℹ️ Tip</h4></div>
-      <div class="panel-body" style="font-size:12.5px;color:#475569;line-height:1.8">
-        Have an Excel or PDF inventory list? Use <b>Master Data → Import PDF</b> to bulk-load items with opening stock.
-      </div>
-    </div>
   `;
 }
 
@@ -551,16 +510,18 @@ function renderDashboard(c){
   if(db.items.length === 0){ renderSetup(c); return; }
 
   const totalItems = db.items.length;
-  const totalQty = db.stock.reduce((s,r) => s + Math.max(0, Number(r.current_stock)), 0);
-  const totalValue = db.stock.reduce((s,r) => s + Math.max(0, Number(r.current_stock)) * Number(r.unit_cost), 0);
+  const totalQty = db.stock.reduce((s,r)=>s+Math.max(0,Number(r.current_stock)),0);
+  const totalValue = db.stock.reduce((s,r)=>s+Math.max(0,Number(r.current_stock))*Number(r.unit_cost),0);
+
   const todayStr = today();
-  const todayIn = db.transactions.filter(t => t.status === 'Approved' && t.type === 'STOCK_IN' && t.date === todayStr)
-    .reduce((s,t) => s + (t.items?.reduce((a,i) => a + i.qty, 0) || 0), 0);
-  const todayOut = db.transactions.filter(t => t.status === 'Approved' && t.type === 'STOCK_OUT' && t.date === todayStr)
-    .reduce((s,t) => s + (t.items?.reduce((a,i) => a + i.qty, 0) || 0), 0);
-  const lowStock = db.items.filter(i => { const s = getStockStatus(i).label; return s === 'Low Stock' || s === 'Critical'; });
+  const todayIn = db.transactions.filter(t=>t.status==='Approved'&&t.type==='STOCK_IN'&&t.date===todayStr)
+    .reduce((s,t)=>s+t.items?.reduce((a,i)=>a+i.qty,0)||0,0);
+  const todayOut = db.transactions.filter(t=>t.status==='Approved'&&t.type==='STOCK_OUT'&&t.date===todayStr)
+    .reduce((s,t)=>s+t.items?.reduce((a,i)=>a+i.qty,0)||0,0);
+
+  const lowStock = db.items.filter(i => { const s = getStockStatus(i).label; return s==='Low Stock'||s==='Critical'; });
   const outStock = db.items.filter(i => getStock(i.id) <= 0);
-  const txnCount = db.transactions.filter(t => t.status === 'Approved').length;
+  const txnCount = db.transactions.filter(t=>t.status==='Approved').length;
 
   c.innerHTML = `
     <div class="cards">
@@ -583,7 +544,7 @@ function renderDashboard(c){
           <table>
             <thead><tr><th>Item</th><th>Location</th><th class="num">Qty</th><th class="num">Min</th><th>Status</th></tr></thead>
             <tbody>
-              ${db.items.slice(0, 10).map(i => {
+              ${db.items.slice(0,10).map(i => {
                 const s = getStockStatus(i);
                 return `<tr onclick="viewItemDetail(${i.id})" style="cursor:pointer">
                   <td><b>${esc(i.name)}</b><br><span style="font-size:11px;color:var(--muted)">${esc(i.code)}</span></td>
@@ -606,7 +567,7 @@ function renderDashboard(c){
           <table>
             <thead><tr><th>Date</th><th>Number</th><th>Type</th><th>Status</th><th>Requested By</th></tr></thead>
             <tbody>
-              ${db.transactions.slice(0, 10).map(t => `
+              ${db.transactions.slice(0,10).map(t => `
                 <tr>
                   <td>${fmtDate(t.date)}</td>
                   <td><b>${esc(t.number)}</b></td>
@@ -636,7 +597,6 @@ function renderItems(c){
     <div class="panel">
       <div class="panel-head"><h4>📦 Items (${db.items.length})</h4>
         <button class="btn sec sm" onclick="go('search')">🔍 Search</button>
-        <button class="btn sec sm" onclick="go('importpdf')">📄 Import PDF</button>
         ${can('manage_items') ? `<button class="btn sm" onclick="newItem()">+ Add Item</button>` : ''}
       </div>
       <div class="panel-body" style="padding:0">
@@ -654,12 +614,10 @@ function renderItems(c){
                   <td class="num">${fmtQty(getStock(i.id))} ${esc(i.unit)}</td>
                   <td class="num">${fmt(i.unit_cost)}</td>
                   <td><span class="badge-status ${s.cls}">${s.label}</span></td>
-                  <td style="white-space:nowrap">
-                    <button class="btn sec sm" onclick="viewItemDetail(${i.id})">View</button>
-                    <button class="btn sec sm" onclick="editItem(${i.id})">Edit</button>
-                  </td>
+                  <td><button class="btn sec sm" onclick="viewItemDetail(${i.id})">View</button>
+                      <button class="btn sec sm" onclick="editItem(${i.id})">Edit</button></td>
                 </tr>`;
-              }).join('') || '<tr><td colspan="8" class="empty">No items yet</td></tr>'}
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -668,49 +626,42 @@ function renderItems(c){
 }
 
 function newItem(id){
-  const item = id ? getItem(id) : {
-    code:'', sku:'', barcode:'', name:'', description:'', category_id:'',
-    unit:'pcs', min_stock:0, max_stock:0, reorder_level:0, unit_cost:0,
-    warehouse:'Main Warehouse', building:'', rack:'', shelf:'', bin:'',
-    supplier_id:'', status:'Active',
-  };
+  const item = id ? getItem(id) : { code:'', sku:'', barcode:'', name:'', description:'', category_id:'',
+    unit:'pcs', min_stock:0, max_stock:0, reorder_level:0, unit_cost:0, warehouse:'Main Warehouse',
+    building:'', rack:'', shelf:'', bin:'', supplier_id:'', status:'Active' };
   openModal(`
-    <div class="modal-head"><h4>${id ? 'Edit' : 'New'} Item</h4><button class="x-btn" onclick="closeModal()">×</button></div>
+    <div class="modal-head"><h4>${id?'Edit':'New'} Item</h4><button class="x-btn" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="field"><label>Code *</label><input id="f_code" value="${esc(item.code)}"></div>
         <div class="field"><label>Name *</label><input id="f_name" value="${esc(item.name)}"></div>
-        <div class="field"><label>Category</label>
-          <select id="f_cat"><option value="">--</option>
-            ${db.categories.map(x => `<option value="${x.id}" ${x.id === item.category_id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}
-          </select></div>
-        <div class="field"><label>Unit</label>
-          <select id="f_unit">
-            ${['pcs','kg','m','L','box','roll','set','pair','ton','meter'].map(u => `<option ${u === item.unit ? 'selected' : ''}>${u}</option>`).join('')}
-          </select></div>
+        <div class="field"><label>Category</label><select id="f_cat"><option value="">--</option>
+          ${db.categories.map(c=>`<option value="${c.id}" ${c.id===item.category_id?'selected':''}>${esc(c.name)}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>Unit</label><select id="f_unit">
+          ${['pcs','kg','m','L','box','roll','set','pair','ton','meter'].map(u=>`<option ${u===item.unit?'selected':''}>${u}</option>`).join('')}
+        </select></div>
         <div class="field"><label>Unit Cost</label><input id="f_cost" type="number" step="0.01" value="${item.unit_cost}"></div>
         <div class="field"><label>Min Stock</label><input id="f_min" type="number" value="${item.min_stock}"></div>
         <div class="field"><label>Reorder Level</label><input id="f_reorder" type="number" value="${item.reorder_level}"></div>
         <div class="field"><label>Max Stock</label><input id="f_max" type="number" value="${item.max_stock}"></div>
-        <div class="field"><label>Supplier</label>
-          <select id="f_sup"><option value="">--</option>
-            ${db.suppliers.map(s => `<option value="${s.id}" ${s.id === item.supplier_id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
-          </select></div>
-        <div class="field"><label>Warehouse</label><input id="f_wh" value="${esc(item.warehouse || '')}"></div>
-        <div class="field"><label>Rack</label><input id="f_rack" value="${esc(item.rack || '')}"></div>
-        <div class="field"><label>Shelf</label><input id="f_shelf" value="${esc(item.shelf || '')}"></div>
-        <div class="field"><label>Bin</label><input id="f_bin" value="${esc(item.bin || '')}"></div>
-        <div class="field"><label>Barcode</label><input id="f_bar" value="${esc(item.barcode || '')}"></div>
-        <div class="field"><label>Status</label>
-          <select id="f_status">
-            <option ${item.status === 'Active' ? 'selected' : ''}>Active</option>
-            <option ${item.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
-          </select></div>
+        <div class="field"><label>Supplier</label><select id="f_sup"><option value="">--</option>
+          ${db.suppliers.map(s=>`<option value="${s.id}" ${s.id===item.supplier_id?'selected':''}>${esc(s.name)}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>Warehouse</label><input id="f_wh" value="${esc(item.warehouse||'')}"></div>
+        <div class="field"><label>Rack</label><input id="f_rack" value="${esc(item.rack||'')}"></div>
+        <div class="field"><label>Shelf</label><input id="f_shelf" value="${esc(item.shelf||'')}"></div>
+        <div class="field"><label>Bin</label><input id="f_bin" value="${esc(item.bin||'')}"></div>
+        <div class="field"><label>Barcode</label><input id="f_bar" value="${esc(item.barcode||'')}"></div>
+        <div class="field"><label>Status</label><select id="f_status">
+          <option ${item.status==='Active'?'selected':''}>Active</option>
+          <option ${item.status==='Inactive'?'selected':''}>Inactive</option>
+        </select></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn sec" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveItem(${id || 'null'})">Save</button>
+      <button class="btn" onclick="saveItem(${id||'null'})">Save</button>
     </div>`);
 }
 
@@ -743,33 +694,28 @@ async function saveItem(id){
   }
   if(err){ toast(err.message, 'error'); return; }
 
-  await sb.from('audit_logs').insert([{
-    user_id: db.user.id, user_name: db.user.name,
-    action: id ? 'ITEM_UPDATED' : 'ITEM_CREATED',
-    item_name: data.name, note: data.code,
-  }]);
+  await sb.from('audit_logs').insert([{ user_id: db.user.id, user_name: db.user.name,
+    action: id ? 'ITEM_UPDATED' : 'ITEM_CREATED', item_name: data.name, note: data.code }]);
 
   toast(id ? 'Item updated' : 'Item created', 'success');
   closeModal();
   await refreshItems();
-  go('items');
+  renderItems(document.getElementById('content'));
 }
 function editItem(id){ newItem(id); }
 
 async function viewItemDetail(id){
-  const item = getItem(id);
-  if(!item) return;
+  const item = getItem(id); if(!item) return;
   const qty = getStock(id);
   const { data: history } = await sb.from('transaction_items')
-    .select('qty,unit_cost,transactions(number,type,status,date,requested_by)')
-    .eq('item_id', id).limit(50);
+    .select('qty,unit_cost,transactions(number,type,status,date,requested_by)').eq('item_id', id).limit(50);
 
   openModal(`
     <div class="modal-head"><h4>📦 ${esc(item.name)}</h4><button class="x-btn" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="cards" style="margin-bottom:16px">
         <div class="card"><div class="label">Current Stock</div><div class="value">${fmtQty(qty)} ${esc(item.unit)}</div></div>
-        <div class="card success"><div class="label">Value</div><div class="value" style="font-size:18px">${fmtMoney(qty * item.unit_cost)}</div></div>
+        <div class="card success"><div class="label">Value</div><div class="value" style="font-size:18px">${fmtMoney(qty*item.unit_cost)}</div></div>
       </div>
       <div class="panel"><div class="panel-head"><h4>Details</h4></div>
         <div class="panel-body">
@@ -783,14 +729,10 @@ async function viewItemDetail(id){
           <table style="min-width:auto">
             <thead><tr><th>Date</th><th>Type</th><th>Ref</th><th class="num">Qty</th><th>Status</th></tr></thead>
             <tbody>
-              ${(history || []).map(h => `
-                <tr>
-                  <td>${fmtDate(h.transactions?.date)}</td>
-                  <td>${typePill(h.transactions?.type)}</td>
-                  <td>${esc(h.transactions?.number)}</td>
-                  <td class="num">${fmtQty(h.qty)}</td>
-                  <td>${statusPill(h.transactions?.status)}</td>
-                </tr>`).join('') || '<tr><td colspan="5" class="empty">No history</td></tr>'}
+              ${(history||[]).map(h => `
+                <tr><td>${fmtDate(h.transactions?.date)}</td><td>${typePill(h.transactions?.type)}</td>
+                <td>${esc(h.transactions?.number)}</td><td class="num">${fmtQty(h.qty)}</td>
+                <td>${statusPill(h.transactions?.status)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No history</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -800,7 +742,7 @@ async function viewItemDetail(id){
 }
 
 /* ============================================================================
-   CATEGORIES
+   CATEGORIES / SUPPLIERS / DEPARTMENTS
    ============================================================================ */
 function renderCategories(c){
   c.innerHTML = `
@@ -810,46 +752,37 @@ function renderCategories(c){
       <div class="panel-body" style="padding:0">
         ${db.categories.length ? `<div class="table-wrap" style="border:none"><table>
           <thead><tr><th>Name</th><th class="num">Items</th><th></th></tr></thead>
-          <tbody>${db.categories.map(cat => `
-            <tr>
-              <td><b>${esc(cat.name)}</b></td>
-              <td class="num">${db.items.filter(i => i.category_id === cat.id).length}</td>
-              <td>${can('manage_categories') ? `<button class="btn sec sm" onclick="editCategory(${cat.id})">Edit</button>` : ''}</td>
-            </tr>`).join('')}</tbody>
-        </table></div>` : `<div class="empty-state"><div class="icon">🏷️</div>
-          <h3>No categories yet</h3>
+          <tbody>${db.categories.map(cat => `<tr>
+            <td><b>${esc(cat.name)}</b></td>
+            <td class="num">${db.items.filter(i=>i.category_id===cat.id).length}</td>
+            <td>${can('manage_categories') ? `<button class="btn sec sm" onclick="editCategory(${cat.id})">Edit</button>`:''}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : `<div class="empty-state"><div class="icon">🏷️</div><h3>No categories yet</h3>
           <button class="btn" onclick="newCategory()">+ Add First Category</button></div>`}
       </div>
     </div>`;
 }
 function newCategory(id){
-  const cat = id ? db.categories.find(x => x.id === id) : { name:'' };
+  const cat = id ? db.categories.find(c=>c.id===id) : {name:''};
   openModal(`
-    <div class="modal-head"><h4>${id ? 'Edit' : 'New'} Category</h4><button class="x-btn" onclick="closeModal()">×</button></div>
-    <div class="modal-body">
-      <div class="field"><label>Name *</label><input id="c_name" value="${esc(cat.name)}" placeholder="e.g. Bearings"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn sec" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveCategory(${id || 'null'})">Save</button>
-    </div>`);
+    <div class="modal-head"><h4>${id?'Edit':'New'} Category</h4><button class="x-btn" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><div class="field"><label>Name *</label><input id="c_name" value="${esc(cat.name)}"></div></div>
+    <div class="modal-foot"><button class="btn sec" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="saveCategory(${id||'null'})">Save</button></div>`);
 }
 function editCategory(id){ newCategory(id); }
 async function saveCategory(id){
   const name = document.getElementById('c_name').value.trim();
   if(!name){ toast('Name required', 'error'); return; }
   const { error } = id
-    ? await sb.from('categories').update({ name }).eq('id', id)
-    : await sb.from('categories').insert([{ name }]);
+    ? await sb.from('categories').update({name}).eq('id', id)
+    : await sb.from('categories').insert([{name}]);
   if(error){ toast(error.message, 'error'); return; }
   await loadAll();
   closeModal();
-  go('categories');
+  renderCategories(document.getElementById('content'));
 }
 
-/* ============================================================================
-   SUPPLIERS
-   ============================================================================ */
 function renderSuppliers(c){
   c.innerHTML = `
     <div class="panel">
@@ -858,35 +791,27 @@ function renderSuppliers(c){
       <div class="panel-body" style="padding:0">
         ${db.suppliers.length ? `<div class="table-wrap" style="border:none"><table>
           <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th></th></tr></thead>
-          <tbody>${db.suppliers.map(s => `
-            <tr>
-              <td><b>${esc(s.name)}</b></td>
-              <td>${esc(s.contact || '')}</td>
-              <td>${esc(s.email || '')}</td>
-              <td>${can('manage_suppliers') ? `<button class="btn sec sm" onclick="editSupplier(${s.id})">Edit</button>` : ''}</td>
-            </tr>`).join('')}</tbody>
-        </table></div>` : `<div class="empty-state"><div class="icon">🚚</div>
-          <h3>No suppliers yet</h3>
+          <tbody>${db.suppliers.map(s => `<tr>
+            <td><b>${esc(s.name)}</b></td><td>${esc(s.contact||'')}</td><td>${esc(s.email||'')}</td>
+            <td>${can('manage_suppliers') ? `<button class="btn sec sm" onclick="editSupplier(${s.id})">Edit</button>`:''}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : `<div class="empty-state"><div class="icon">🚚</div><h3>No suppliers yet</h3>
           <button class="btn" onclick="newSupplier()">+ Add First Supplier</button></div>`}
       </div>
     </div>`;
 }
 function newSupplier(id){
-  const s = id ? db.suppliers.find(x => x.id === id) : { name:'', contact:'', email:'', address:'' };
+  const s = id ? db.suppliers.find(x=>x.id===id) : {name:'',contact:'',email:'',address:''};
   openModal(`
-    <div class="modal-head"><h4>${id ? 'Edit' : 'New'} Supplier</h4><button class="x-btn" onclick="closeModal()">×</button></div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="field"><label>Name *</label><input id="s_name" value="${esc(s.name)}"></div>
-        <div class="field"><label>Contact</label><input id="s_contact" value="${esc(s.contact || '')}"></div>
-        <div class="field"><label>Email</label><input id="s_email" value="${esc(s.email || '')}"></div>
-        <div class="field"><label>Address</label><input id="s_addr" value="${esc(s.address || '')}"></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn sec" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveSupplier(${id || 'null'})">Save</button>
-    </div>`);
+    <div class="modal-head"><h4>${id?'Edit':'New'} Supplier</h4><button class="x-btn" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="field"><label>Name *</label><input id="s_name" value="${esc(s.name)}"></div>
+      <div class="field"><label>Contact</label><input id="s_contact" value="${esc(s.contact||'')}"></div>
+      <div class="field"><label>Email</label><input id="s_email" value="${esc(s.email||'')}"></div>
+      <div class="field"><label>Address</label><input id="s_addr" value="${esc(s.address||'')}"></div>
+    </div></div>
+    <div class="modal-foot"><button class="btn sec" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="saveSupplier(${id||'null'})">Save</button></div>`);
 }
 function editSupplier(id){ newSupplier(id); }
 async function saveSupplier(id){
@@ -901,14 +826,9 @@ async function saveSupplier(id){
     ? await sb.from('suppliers').update(data).eq('id', id)
     : await sb.from('suppliers').insert([data]);
   if(error){ toast(error.message, 'error'); return; }
-  await loadAll();
-  closeModal();
-  go('suppliers');
+  await loadAll(); closeModal(); renderSuppliers(document.getElementById('content'));
 }
 
-/* ============================================================================
-   DEPARTMENTS
-   ============================================================================ */
 function renderDepartments(c){
   c.innerHTML = `
     <div class="panel">
@@ -917,38 +837,32 @@ function renderDepartments(c){
       <div class="panel-body" style="padding:0">
         ${db.departments.length ? `<div class="table-wrap" style="border:none"><table>
           <thead><tr><th>Name</th><th></th></tr></thead>
-          <tbody>${db.departments.map(d => `
-            <tr>
-              <td><b>${esc(d.name)}</b></td>
-              <td>${can('manage_departments') ? `<button class="btn sec sm" onclick="editDept(${d.id})">Edit</button>` : ''}</td>
-            </tr>`).join('')}</tbody>
-        </table></div>` : `<div class="empty-state"><div class="icon">🏢</div>
-          <h3>No departments yet</h3>
+          <tbody>${db.departments.map(d => `<tr>
+            <td><b>${esc(d.name)}</b></td>
+            <td>${can('manage_departments') ? `<button class="btn sec sm" onclick="editDept(${d.id})">Edit</button>`:''}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : `<div class="empty-state"><div class="icon">🏢</div><h3>No departments yet</h3>
           <button class="btn" onclick="newDept()">+ Add First</button></div>`}
       </div>
     </div>`;
 }
 function newDept(id){
-  const d = id ? db.departments.find(x => x.id === id) : { name:'' };
+  const d = id ? db.departments.find(x=>x.id===id) : {name:''};
   openModal(`
-    <div class="modal-head"><h4>${id ? 'Edit' : 'New'} Department</h4><button class="x-btn" onclick="closeModal()">×</button></div>
+    <div class="modal-head"><h4>${id?'Edit':'New'} Department</h4><button class="x-btn" onclick="closeModal()">×</button></div>
     <div class="modal-body"><div class="field"><label>Name *</label><input id="d_name" value="${esc(d.name)}"></div></div>
-    <div class="modal-foot">
-      <button class="btn sec" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveDept(${id || 'null'})">Save</button>
-    </div>`);
+    <div class="modal-foot"><button class="btn sec" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="saveDept(${id||'null'})">Save</button></div>`);
 }
 function editDept(id){ newDept(id); }
 async function saveDept(id){
   const name = document.getElementById('d_name').value.trim();
   if(!name){ toast('Name required', 'error'); return; }
   const { error } = id
-    ? await sb.from('departments').update({ name }).eq('id', id)
-    : await sb.from('departments').insert([{ name }]);
+    ? await sb.from('departments').update({name}).eq('id', id)
+    : await sb.from('departments').insert([{name}]);
   if(error){ toast(error.message, 'error'); return; }
-  await loadAll();
-  closeModal();
-  go('departments');
+  await loadAll(); closeModal(); renderDepartments(document.getElementById('content'));
 }
 
 /* ============================================================================
@@ -971,7 +885,7 @@ function renderStockIn(c){
           <div class="field"><label>Date</label><input id="in_date" type="date" value="${today()}"></div>
           <div class="field"><label>Supplier</label>
             <select id="in_supplier"><option value="">--</option>
-              ${db.suppliers.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+              ${db.suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
             </select></div>
           <div class="field"><label>Reference</label><input id="in_ref" placeholder="PO-1234"></div>
           <div class="field"><label>Notes</label><input id="in_notes"></div>
@@ -998,7 +912,7 @@ function renderStockIn(c){
   renderStockInLines();
 }
 function addStockInLine(){
-  stockInCart.push({ item_id:'', qty:1, unit_cost:0 });
+  stockInCart.push({item_id:'', qty:1, unit_cost:0});
   renderStockInLines();
 }
 function renderStockInLines(){
@@ -1007,40 +921,35 @@ function renderStockInLines(){
     return `<tr>
       <td><select onchange="updateInLine(${idx},'item_id',+this.value)" style="min-width:180px">
         <option value="">-- Select --</option>
-        ${db.items.filter(i => i.status === 'Active').map(i => `<option value="${i.id}" ${i.id == l.item_id ? 'selected' : ''}>${esc(i.code)} - ${esc(i.name)}</option>`).join('')}
+        ${db.items.filter(i=>i.status==='Active').map(i=>`<option value="${i.id}" ${i.id==l.item_id?'selected':''}>${esc(i.code)} - ${esc(i.name)}</option>`).join('')}
       </select></td>
       <td><input type="number" value="${l.qty}" onchange="updateInLine(${idx},'qty',+this.value)" style="width:80px"></td>
-      <td>${item ? esc(item.unit) : '-'}</td>
+      <td>${item?esc(item.unit):'-'}</td>
       <td><input type="number" step="0.01" value="${l.unit_cost}" onchange="updateInLine(${idx},'unit_cost',+this.value)" style="width:100px"></td>
-      <td class="num">${fmt(l.qty * l.unit_cost)}</td>
+      <td class="num">${fmt(l.qty*l.unit_cost)}</td>
       <td><button class="btn sec sm" onclick="removeInLine(${idx})">✕</button></td>
     </tr>`;
   }).join('') : '<tr><td colspan="6" class="empty">No items added.</td></tr>';
-  document.getElementById('inTotal').innerHTML = `<b>${fmt(stockInCart.reduce((s, l) => s + l.qty * l.unit_cost, 0))}</b>`;
+  document.getElementById('inTotal').innerHTML = `<b>${fmt(stockInCart.reduce((s,l)=>s+l.qty*l.unit_cost,0))}</b>`;
 }
 function updateInLine(idx, key, val){
   stockInCart[idx][key] = val;
-  if(key === 'item_id'){
-    const item = getItem(val);
-    if(item) stockInCart[idx].unit_cost = Number(item.unit_cost);
-  }
+  if(key === 'item_id'){ const item = getItem(val); if(item) stockInCart[idx].unit_cost = Number(item.unit_cost); }
   renderStockInLines();
 }
-function removeInLine(idx){ stockInCart.splice(idx, 1); renderStockInLines(); }
+function removeInLine(idx){ stockInCart.splice(idx,1); renderStockInLines(); }
 
 async function saveStockIn(mode){
   const valid = stockInCart.filter(l => l.item_id && l.qty > 0);
   if(!valid.length){ toast('Add items first', 'error'); return; }
 
-  const { data: number, error: numErr } = await sb.rpc('next_txn_number', { p_type: 'STOCK_IN' });
-  if(numErr){ toast(numErr.message, 'error'); return; }
+  // Generate number
+  const { data: numData } = await sb.rpc('next_txn_number', { p_type: 'STOCK_IN' });
+  const number = numData;
 
   const { data: txn, error } = await sb.from('transactions').insert([{
-    number,
-    type: 'STOCK_IN',
-    date: document.getElementById('in_date').value || today(),
-    status: 'Draft',
-    requested_by: db.user.id,
+    number, type:'STOCK_IN', date: document.getElementById('in_date').value || today(),
+    status:'Draft', requested_by: db.user.id,
     supplier_id: +document.getElementById('in_supplier').value || null,
     reference: document.getElementById('in_ref').value.trim(),
     notes: document.getElementById('in_notes').value.trim(),
@@ -1054,15 +963,10 @@ async function saveStockIn(mode){
   const { error: itemErr } = await sb.from('transaction_items').insert(itemRows);
   if(itemErr){ toast(itemErr.message, 'error'); return; }
 
-  await sb.from('approval_history').insert([{
-    transaction_id: txn.id, user_id: db.user.id,
-    user_name: db.user.name, action: 'Created',
-  }]);
-  await sb.from('audit_logs').insert([{
-    user_id: db.user.id, user_name: db.user.name,
-    action: 'STOCK_IN_CREATED', txn_number: number,
-    note: `${valid.length} items`,
-  }]);
+  await sb.from('approval_history').insert([{ transaction_id: txn.id, user_id: db.user.id,
+    user_name: db.user.name, action: 'Created' }]);
+  await sb.from('audit_logs').insert([{ user_id: db.user.id, user_name: db.user.name,
+    action: 'STOCK_IN_CREATED', txn_number: number, note: `${valid.length} items` }]);
 
   if(mode === 'submit'){
     const { data: res, error: rpcErr } = await sb.rpc('submit_transaction', { p_txn_id: txn.id });
@@ -1096,7 +1000,7 @@ function renderStockOut(c){
           <div class="field"><label>Date</label><input id="out_date" type="date" value="${today()}"></div>
           <div class="field"><label>Department</label>
             <select id="out_dept"><option value="">--</option>
-              ${db.departments.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('')}
+              ${db.departments.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}
             </select></div>
           <div class="field"><label>Recipient</label><input id="out_recipient"></div>
           <div class="field"><label>Reference</label><input id="out_ref"></div>
@@ -1123,26 +1027,26 @@ function renderStockOut(c){
     </div>`;
   renderStockOutLines();
 }
-function addStockOutLine(){ stockOutCart.push({ item_id:'', qty:1 }); renderStockOutLines(); }
+function addStockOutLine(){ stockOutCart.push({item_id:'', qty:1}); renderStockOutLines(); }
 function renderStockOutLines(){
   document.getElementById('outLines').innerHTML = stockOutCart.length ? stockOutCart.map((l, idx) => {
     const item = l.item_id ? getItem(+l.item_id) : null;
     const avail = item ? getStock(item.id) : 0;
     const exceeded = item && !db.settings.allowNegativeStock && l.qty > avail;
-    return `<tr${exceeded ? ' style="background:#fef2f2"' : ''}>
+    return `<tr${exceeded?' style="background:#fef2f2"':''}>
       <td><select onchange="updateOutLine(${idx},'item_id',+this.value)" style="min-width:180px">
         <option value="">-- Select --</option>
-        ${db.items.filter(i => i.status === 'Active').map(i => `<option value="${i.id}" ${i.id == l.item_id ? 'selected' : ''}>${esc(i.code)} - ${esc(i.name)}</option>`).join('')}
+        ${db.items.filter(i=>i.status==='Active').map(i=>`<option value="${i.id}" ${i.id==l.item_id?'selected':''}>${esc(i.code)} - ${esc(i.name)}</option>`).join('')}
       </select></td>
-      <td class="num">${item ? fmtQty(avail) : '-'}</td>
+      <td class="num">${item?fmtQty(avail):'-'}</td>
       <td><input type="number" value="${l.qty}" onchange="updateOutLine(${idx},'qty',+this.value)" style="width:90px"></td>
-      <td>${item ? esc(item.unit) : '-'}</td>
+      <td>${item?esc(item.unit):'-'}</td>
       <td><button class="btn sec sm" onclick="removeOutLine(${idx})">✕</button></td>
     </tr>`;
   }).join('') : '<tr><td colspan="5" class="empty">No items added.</td></tr>';
 }
 function updateOutLine(idx, key, val){ stockOutCart[idx][key] = val; renderStockOutLines(); }
-function removeOutLine(idx){ stockOutCart.splice(idx, 1); renderStockOutLines(); }
+function removeOutLine(idx){ stockOutCart.splice(idx,1); renderStockOutLines(); }
 
 async function saveStockOut(mode){
   const valid = stockOutCart.filter(l => l.item_id && l.qty > 0);
@@ -1156,15 +1060,10 @@ async function saveStockOut(mode){
     }
   }
 
-  const { data: number, error: numErr } = await sb.rpc('next_txn_number', { p_type: 'STOCK_OUT' });
-  if(numErr){ toast(numErr.message, 'error'); return; }
-
+  const { data: number } = await sb.rpc('next_txn_number', { p_type: 'STOCK_OUT' });
   const { data: txn, error } = await sb.from('transactions').insert([{
-    number,
-    type: 'STOCK_OUT',
-    date: document.getElementById('out_date').value || today(),
-    status: 'Draft',
-    requested_by: db.user.id,
+    number, type:'STOCK_OUT', date: document.getElementById('out_date').value || today(),
+    status:'Draft', requested_by: db.user.id,
     department_id: +document.getElementById('out_dept').value || null,
     recipient: document.getElementById('out_recipient').value.trim(),
     reference: document.getElementById('out_ref').value.trim(),
@@ -1175,20 +1074,16 @@ async function saveStockOut(mode){
 
   const itemRows = valid.map(l => {
     const item = getItem(l.item_id);
-    return { transaction_id: txn.id, item_id: l.item_id, qty: l.qty, unit_cost: item.unit_cost, unit: item.unit };
+    return { transaction_id: txn.id, item_id: l.item_id, qty: l.qty,
+      unit_cost: item.unit_cost, unit: item.unit };
   });
   const { error: itemErr } = await sb.from('transaction_items').insert(itemRows);
   if(itemErr){ toast(itemErr.message, 'error'); return; }
 
-  await sb.from('approval_history').insert([{
-    transaction_id: txn.id, user_id: db.user.id,
-    user_name: db.user.name, action: 'Created',
-  }]);
-  await sb.from('audit_logs').insert([{
-    user_id: db.user.id, user_name: db.user.name,
-    action: 'STOCK_OUT_CREATED', txn_number: number,
-    note: `${valid.length} items`,
-  }]);
+  await sb.from('approval_history').insert([{ transaction_id: txn.id, user_id: db.user.id,
+    user_name: db.user.name, action: 'Created' }]);
+  await sb.from('audit_logs').insert([{ user_id: db.user.id, user_name: db.user.name,
+    action: 'STOCK_OUT_CREATED', txn_number: number, note: `${valid.length} items` }]);
 
   if(mode === 'submit'){
     const { data: res, error: rpcErr } = await sb.rpc('submit_transaction', { p_txn_id: txn.id });
@@ -1212,21 +1107,22 @@ function renderCurrentStock(c){
       <div class="panel-body" style="padding:0">
         <div class="table-wrap" style="border:none">
           <table>
-            <thead><tr><th>Code</th><th>Item</th><th>Location</th><th class="num">Qty</th><th class="num">Min</th><th class="num">Value</th><th>Status</th></tr></thead>
+            <thead><tr><th>Code</th><th>Item</th><th>Location</th><th class="num">Qty</th><th class="num">Min</th><th class="num">Reorder</th><th class="num">Value</th><th>Status</th></tr></thead>
             <tbody>
               ${db.stock.length ? db.stock.map(r => {
                 const item = getItem(r.item_id);
-                const s = getStockStatus(item || { id: r.item_id, min_stock: r.min_stock, reorder_level: r.reorder_level });
+                const s = getStockStatus(item || {id: r.item_id, min_stock: r.min_stock, reorder_level: r.reorder_level});
                 return `<tr>
                   <td><b>${esc(r.code)}</b></td>
                   <td><b>${esc(r.item_name)}</b></td>
                   <td>${esc(r.warehouse||'')} · ${esc(r.rack||'')}/${esc(r.shelf||'')}/${esc(r.bin||'')}</td>
                   <td class="num"><b>${fmtQty(r.current_stock)}</b> ${esc(r.unit)}</td>
                   <td class="num">${fmtQty(r.min_stock)}</td>
-                  <td class="num">${fmt(Number(r.current_stock) * Number(r.unit_cost))}</td>
+                  <td class="num">${fmtQty(r.reorder_level)}</td>
+                  <td class="num">${fmt(Number(r.current_stock)*Number(r.unit_cost))}</td>
                   <td><span class="badge-status ${s.cls}">${s.label}</span></td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="7" class="empty">No items yet</td></tr>'}
+              }).join('') : '<tr><td colspan="8" class="empty">No items yet</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -1251,7 +1147,7 @@ function renderAdjustment(c){
           <div class="field"><label>Item</label>
             <select id="adj_item" onchange="updateAdjPreview()">
               <option value="">-- Select --</option>
-              ${db.items.filter(i => i.status === 'Active').map(i => `<option value="${i.id}">${esc(i.code)} - ${esc(i.name)} (${getStock(i.id)})</option>`).join('')}
+              ${db.items.filter(i=>i.status==='Active').map(i=>`<option value="${i.id}">${esc(i.code)} - ${esc(i.name)} (${getStock(i.id)})</option>`).join('')}
             </select></div>
           <div class="field"><label>System Qty</label><input id="adj_sys" readonly></div>
           <div class="field"><label>Physical Qty</label><input id="adj_phys" type="number" onchange="updateAdjPreview()"></div>
@@ -1291,8 +1187,7 @@ async function submitAdjustment(){
 
   const item = getItem(itemId);
   const type = diff > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT';
-  const { data: number, error: numErr } = await sb.rpc('next_txn_number', { p_type: type });
-  if(numErr){ toast(numErr.message, 'error'); return; }
+  const { data: number } = await sb.rpc('next_txn_number', { p_type: type });
 
   const { data: txn, error } = await sb.from('transactions').insert([{
     number, type, date: today(), status: 'Draft', requested_by: db.user.id,
@@ -1302,18 +1197,13 @@ async function submitAdjustment(){
 
   await sb.from('transaction_items').insert([{
     transaction_id: txn.id, item_id: itemId, qty: Math.abs(diff),
-    unit_cost: item.unit_cost, unit: item.unit,
+    unit_cost: item.unit_cost, unit: item.unit
   }]);
-  await sb.from('approval_history').insert([{
-    transaction_id: txn.id, user_id: db.user.id,
-    user_name: db.user.name, action: 'Created',
-    comment: `System ${sys} → Physical ${phys}`,
-  }]);
-  await sb.from('audit_logs').insert([{
-    user_id: db.user.id, user_name: db.user.name,
-    action: 'ADJUSTMENT_CREATED', txn_number: number,
-    item_name: item.name, old_value: sys, new_value: phys,
-  }]);
+  await sb.from('approval_history').insert([{ transaction_id: txn.id, user_id: db.user.id,
+    user_name: db.user.name, action: 'Created', comment: `System ${sys} → Physical ${phys}` }]);
+  await sb.from('audit_logs').insert([{ user_id: db.user.id, user_name: db.user.name,
+    action: 'ADJUSTMENT_CREATED', txn_number: number, item_name: item.name,
+    old_value: sys, new_value: phys }]);
 
   const { data: res, error: rpcErr } = await sb.rpc('submit_transaction', { p_txn_id: txn.id });
   if(rpcErr || !res?.success){ toast(rpcErr?.message || res?.error, 'error'); return; }
@@ -1334,7 +1224,6 @@ function renderHistory(c){
           <option value="">All Types</option>
           <option>STOCK_IN</option><option>STOCK_OUT</option>
           <option>ADJUSTMENT_IN</option><option>ADJUSTMENT_OUT</option>
-          <option>OPENING</option>
         </select>
         <select id="hist_status" style="width:auto" onchange="renderHistoryRows()">
           <option value="">All Status</option>
@@ -1354,27 +1243,28 @@ function renderHistory(c){
   renderHistoryRows();
 }
 async function renderHistoryRows(){
-  const t = document.getElementById('hist_type').value;
-  const s = document.getElementById('hist_status').value;
-  let q = sb.from('transactions').select('*').order('created_at', { ascending:false }).limit(300);
-  if(t) q = q.eq('type', t);
-  if(s) q = q.eq('status', s);
+  const type = document.getElementById('hist_type').value;
+  const status = document.getElementById('hist_status').value;
+  let q = sb.from('transactions').select('*').order('created_at', {ascending:false}).limit(300);
+  if(type) q = q.eq('type', type);
+  if(status) q = q.eq('status', status);
   const { data } = await q;
   const rows = data || [];
 
+  // Fetch item counts per txn
   const ids = rows.map(r => r.id);
   const { data: items } = ids.length
     ? await sb.from('transaction_items').select('transaction_id,qty').in('transaction_id', ids)
     : { data: [] };
   const totals = {};
-  (items || []).forEach(i => { totals[i.transaction_id] = (totals[i.transaction_id] || 0) + Number(i.qty); });
+  (items||[]).forEach(i => { totals[i.transaction_id] = (totals[i.transaction_id]||0) + Number(i.qty); });
 
   document.getElementById('histBody').innerHTML = rows.length ? rows.map(t => `
     <tr>
       <td>${fmtDate(t.date)}</td>
       <td><b>${esc(t.number)}</b></td>
       <td>${typePill(t.type)}</td>
-      <td class="num">${fmtQty(totals[t.id] || 0)}</td>
+      <td class="num">${fmtQty(totals[t.id]||0)}</td>
       <td>${statusPill(t.status)}</td>
       <td>${esc(t.requester_name || '-')}</td>
       <td><button class="btn sec sm" onclick="viewTransaction('${t.id}')">View</button></td>
@@ -1382,58 +1272,47 @@ async function renderHistoryRows(){
 }
 
 async function viewTransaction(id){
-  let t = db.transactions.find(x => x.id === id);
-  if(!t){
-    const { data } = await sb.from('transactions').select('*').eq('id', id).single();
-    t = data;
-  }
+  const t = db.transactions.find(x => x.id === id) || (await sb.from('transactions').select('*').eq('id', id).single()).data;
   if(!t) return;
   const { data: items } = await sb.from('transaction_items').select('*').eq('transaction_id', id);
   const { data: history } = await sb.from('approval_history').select('*').eq('transaction_id', id).order('created_at');
 
   openModal(`
-    <div class="modal-head">
-      <h4>${typePill(t.type)} ${esc(t.number)} ${statusPill(t.status)}</h4>
-      <button class="x-btn" onclick="closeModal()">×</button>
-    </div>
+    <div class="modal-head"><h4>${typePill(t.type)} ${esc(t.number)} ${statusPill(t.status)}</h4>
+      <button class="x-btn" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div style="padding:6px 0">Date: <b>${fmtDate(t.date)}</b></div>
-      ${t.reference ? `<div style="padding:6px 0">Reference: <b>${esc(t.reference)}</b></div>` : ''}
-      ${t.notes ? `<div style="padding:6px 0">Notes: <b>${esc(t.notes)}</b></div>` : ''}
+      ${t.reference?`<div style="padding:6px 0">Reference: <b>${esc(t.reference)}</b></div>`:''}
+      ${t.notes?`<div style="padding:6px 0">Notes: <b>${esc(t.notes)}</b></div>`:''}
       <div class="panel" style="margin-top:14px">
         <div class="panel-head"><h4>Items</h4></div>
         <div class="panel-body" style="padding:0">
           <table style="min-width:auto">
             <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit Cost</th><th class="num">Total</th></tr></thead>
-            <tbody>
-              ${(items || []).map(l => {
-                const item = getItem(l.item_id);
-                return `<tr>
-                  <td>${esc(item?.name || '-')}</td>
-                  <td class="num">${fmtQty(l.qty)}</td>
-                  <td class="num">${fmt(l.unit_cost)}</td>
-                  <td class="num">${fmt(l.qty * l.unit_cost)}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
+            <tbody>${(items||[]).map(l => {
+              const item = getItem(l.item_id);
+              return `<tr><td>${esc(item?.name||'-')}</td>
+                <td class="num">${fmtQty(l.qty)}</td>
+                <td class="num">${fmt(l.unit_cost)}</td>
+                <td class="num">${fmt(l.qty*l.unit_cost)}</td></tr>`;
+            }).join('')}</tbody>
           </table>
         </div>
       </div>
       <div class="panel" style="margin-top:14px">
         <div class="panel-head"><h4>Approval History</h4></div>
         <div class="panel-body">
-          ${(history || []).map(h => `
+          ${(history||[]).map(h => `
             <div style="padding:6px 0;border-bottom:1px dashed var(--border);font-size:12.5px">
               <b>${esc(h.user_name)}</b> · ${esc(h.action)} · ${fmtDateTime(h.created_at)}
-              ${h.comment ? `<div style="color:var(--muted);font-size:12px">${esc(h.comment)}</div>` : ''}
+              ${h.comment?`<div style="color:var(--muted);font-size:12px">${esc(h.comment)}</div>`:''}
             </div>`).join('') || '<div class="empty">No history</div>'}
         </div>
       </div>
     </div>
     <div class="modal-foot">
-      ${t.status === 'Draft' && t.requested_by === db.user.id
-        ? `<button class="btn" onclick="submitFromView('${t.id}')">Submit for Approval</button>`
-        : ''}
+      ${t.status === 'Draft' && t.requested_by === db.user.id ?
+        `<button class="btn" onclick="submitFromView('${t.id}')">Submit for Approval</button>` : ''}
       <button class="btn sec" onclick="closeModal()">Close</button>
     </div>`);
 }
@@ -1454,22 +1333,22 @@ function renderAnalysis(c){
     c.innerHTML = `<div class="empty-state"><div class="icon">📈</div><h3>Nothing to analyse</h3></div>`;
     return;
   }
-  const totalValue = db.stock.reduce((s, r) => s + Math.max(0, Number(r.current_stock)) * Number(r.unit_cost), 0);
-  const totalQty = db.stock.reduce((s, r) => s + Math.max(0, Number(r.current_stock)), 0);
+  const totalValue = db.stock.reduce((s,r)=>s+Math.max(0,Number(r.current_stock))*Number(r.unit_cost),0);
+  const totalQty = db.stock.reduce((s,r)=>s+Math.max(0,Number(r.current_stock)),0);
 
   const catValues = {};
   db.items.forEach(i => {
     const cat = getCategory(i.category_id);
     const name = cat?.name || 'Uncategorized';
-    catValues[name] = (catValues[name] || 0) + getStock(i.id) * Number(i.unit_cost);
+    catValues[name] = (catValues[name]||0) + getStock(i.id) * Number(i.unit_cost);
   });
 
   c.innerHTML = `
     <div class="cards">
       <div class="card success"><div class="label">Inventory Value</div><div class="value" style="font-size:18px">${fmtMoney(totalValue)}</div></div>
       <div class="card info"><div class="label">Total Qty</div><div class="value">${fmtQty(totalQty)}</div></div>
-      <div class="card"><div class="label">Active Items</div><div class="value">${db.items.filter(i => i.status === 'Active').length}</div></div>
-      <div class="card warn"><div class="label">Empty Items</div><div class="value">${db.items.filter(i => getStock(i.id) <= 0).length}</div></div>
+      <div class="card"><div class="label">Active Items</div><div class="value">${db.items.filter(i=>i.status==='Active').length}</div></div>
+      <div class="card warn"><div class="label">Empty Items</div><div class="value">${db.items.filter(i=>getStock(i.id)<=0).length}</div></div>
     </div>
     <div class="panel">
       <div class="panel-head"><h4>💰 Value by Category</h4></div>
@@ -1480,35 +1359,34 @@ function renderAnalysis(c){
     if(!ctx) return;
     if(dashChart) dashChart.destroy();
     dashChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(catValues),
-        datasets: [{ data: Object.values(catValues), backgroundColor: ['#0f766e','#0284c7','#f59e0b','#dc2626','#7c3aed','#16a34a'] }],
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } },
+      type:'doughnut',
+      data:{ labels:Object.keys(catValues),
+        datasets:[{data:Object.values(catValues), backgroundColor:['#0f766e','#0284c7','#f59e0b','#dc2626','#7c3aed','#16a34a']}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}}}
     });
   }, 30);
 }
+function renderFastMoving(c){ c.innerHTML = '<div class="empty"><p>Fast-moving report — implement using the same pattern (query transaction_items + transactions).</p></div>'; }
+function renderSlowMoving(c){ c.innerHTML = '<div class="empty"><p>Slow-moving report — implement using the same pattern.</p></div>'; }
+function renderDeadStock(c){ c.innerHTML = '<div class="empty"><p>Dead stock report — implement using the same pattern.</p></div>'; }
 
 /* ============================================================================
-   REPORTS
+   REPORTS (sample — extend as needed)
    ============================================================================ */
 function renderReports(c){
   const reports = [
-    { id:'current_stock', title:'Current Stock', icon:'📦' },
-    { id:'valuation',     title:'Inventory Valuation', icon:'💰' },
-    { id:'low_stock',     title:'Low Stock', icon:'⚠️' },
-    { id:'out_of_stock',  title:'Out-of-Stock', icon:'❌' },
+    {id:'current_stock', title:'Current Stock', icon:'📦'},
+    {id:'valuation', title:'Inventory Valuation', icon:'💰'},
+    {id:'low_stock', title:'Low Stock', icon:'⚠️'},
+    {id:'out_of_stock', title:'Out-of-Stock', icon:'❌'},
   ];
   c.innerHTML = `
     <div class="panel">
       <div class="panel-head"><h4>📄 Reports</h4></div>
       <div class="panel-body">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
-          ${reports.map(r => `
-            <button class="btn sec" style="padding:14px;justify-content:flex-start" onclick="runReport('${r.id}')">
-              <span style="font-size:18px">${r.icon}</span> ${r.title}
-            </button>`).join('')}
+          ${reports.map(r => `<button class="btn sec" style="padding:14px;justify-content:flex-start" onclick="runReport('${r.id}')">
+            <span style="font-size:18px">${r.icon}</span> ${r.title}</button>`).join('')}
         </div>
       </div>
     </div>`;
@@ -1518,45 +1396,38 @@ function runReport(id){
   if(id === 'current_stock'){
     rows = [['Code','Name','Location','Qty','Unit','Value','Status']];
     db.stock.forEach(r => {
-      rows.push([
-        r.code, r.item_name,
-        `${r.warehouse || ''} ${r.rack || ''}/${r.shelf || ''}/${r.bin || ''}`,
-        r.current_stock, r.unit,
-        (Number(r.current_stock) * Number(r.unit_cost)).toFixed(2),
-        getStockStatus(getItem(r.item_id) || { id: r.item_id, min_stock: r.min_stock, reorder_level: r.reorder_level }).label,
-      ]);
+      rows.push([r.code, r.item_name, `${r.warehouse||''} ${r.rack||''}/${r.shelf||''}/${r.bin||''}`,
+        r.current_stock, r.unit, (Number(r.current_stock)*Number(r.unit_cost)).toFixed(2), getStockStatus(getItem(r.item_id)).label]);
     });
   } else if(id === 'valuation'){
     rows = [['Code','Item','Qty','Unit Cost','Total Value']];
-    db.stock.forEach(r => rows.push([r.code, r.item_name, r.current_stock, r.unit_cost, (Number(r.current_stock) * Number(r.unit_cost)).toFixed(2)]));
-    rows.push(['', '', '', 'TOTAL', db.stock.reduce((s, r) => s + Number(r.current_stock) * Number(r.unit_cost), 0).toFixed(2)]);
+    db.stock.forEach(r => rows.push([r.code, r.item_name, r.current_stock, r.unit_cost, (Number(r.current_stock)*Number(r.unit_cost)).toFixed(2)]));
+    rows.push(['','','','TOTAL', db.stock.reduce((s,r)=>s+Number(r.current_stock)*Number(r.unit_cost),0).toFixed(2)]);
   } else if(id === 'low_stock'){
     rows = [['Code','Item','Qty','Min','Reorder']];
-    db.items.forEach(i => {
-      const s = getStockStatus(i).label;
-      if(s === 'Low Stock' || s === 'Critical') rows.push([i.code, i.name, getStock(i.id), i.min_stock, i.reorder_level]);
-    });
+    db.items.forEach(i => { const s = getStockStatus(i).label; if(s==='Low Stock'||s==='Critical')
+      rows.push([i.code, i.name, getStock(i.id), i.min_stock, i.reorder_level]); });
   } else if(id === 'out_of_stock'){
     rows = [['Code','Item','Unit Cost']];
-    db.items.filter(i => getStock(i.id) <= 0).forEach(i => rows.push([i.code, i.name, i.unit_cost]));
+    db.items.filter(i=>getStock(i.id)<=0).forEach(i => rows.push([i.code, i.name, i.unit_cost]));
   }
 
   openModal(`
-    <div class="modal-head"><h4>${esc(id)}</h4><button class="x-btn" onclick="closeModal()">×</button></div>
+    <div class="modal-head"><h4>${id}</h4><button class="x-btn" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="table-wrap"><table>
-        <thead><tr>${(rows[0] || []).map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-        <tbody>${rows.slice(1).map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+        <thead><tr>${(rows[0]||[]).map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.slice(1).map(r => `<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
       </table></div>
     </div>
     <div class="modal-foot">
-      <button class="btn sec" onclick="downloadCSV('${id}', ${JSON.stringify(rows).replace(/'/g, "\\'")})">⬇ CSV</button>
+      <button class="btn sec" onclick="downloadCSV('${id}', ${JSON.stringify(rows).replace(/'/g,"\\'")})">⬇ CSV</button>
       <button class="btn sec" onclick="closeModal()">Close</button>
     </div>`);
 }
 function downloadCSV(name, rows){
-  const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const csv = rows.map(r => r.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${name}_${today()}.csv`;
@@ -1567,7 +1438,7 @@ function downloadCSV(name, rows){
    AUDIT LOG
    ============================================================================ */
 async function renderAudit(c){
-  const { data } = await sb.from('audit_logs').select('*').order('created_at', { ascending:false }).limit(200);
+  const { data } = await sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(200);
   c.innerHTML = `
     <div class="panel">
       <div class="panel-head"><h4>🔒 Audit Log</h4></div>
@@ -1575,18 +1446,15 @@ async function renderAudit(c){
         <div class="table-wrap" style="border:none">
           <table>
             <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Txn</th><th>Item</th><th>Old</th><th>New</th></tr></thead>
-            <tbody>
-              ${(data || []).map(l => `
-                <tr>
-                  <td>${fmtDateTime(l.created_at)}</td>
-                  <td><b>${esc(l.user_name)}</b></td>
-                  <td>${esc(l.action)}</td>
-                  <td>${esc(l.txn_number || '-')}</td>
-                  <td>${esc(l.item_name || '-')}</td>
-                  <td>${esc(l.old_value || '-')}</td>
-                  <td>${esc(l.new_value || '-')}</td>
-                </tr>`).join('') || '<tr><td colspan="7" class="empty">No audit logs</td></tr>'}
-            </tbody>
+            <tbody>${(data||[]).map(l => `<tr>
+              <td>${fmtDateTime(l.created_at)}</td>
+              <td><b>${esc(l.user_name)}</b></td>
+              <td>${esc(l.action)}</td>
+              <td>${esc(l.txn_number||'-')}</td>
+              <td>${esc(l.item_name||'-')}</td>
+              <td>${esc(l.old_value||'-')}</td>
+              <td>${esc(l.new_value||'-')}</td>
+            </tr>`).join('') || '<tr><td colspan="7" class="empty">No audit logs</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -1614,9 +1482,9 @@ async function renderSettings(c){
 }
 async function saveSettings(){
   const rows = [
-    { key:'company',  value: document.getElementById('set_company').value },
-    { key:'address',  value: document.getElementById('set_address').value },
-    { key:'currency', value: document.getElementById('set_currency').value },
+    {key:'company', value:document.getElementById('set_company').value},
+    {key:'address', value:document.getElementById('set_address').value},
+    {key:'currency', value:document.getElementById('set_currency').value},
   ];
   for(const r of rows) await sb.from('settings').upsert(r);
   await loadAll();
@@ -1644,496 +1512,19 @@ function renderSearch(c){
     const matches = db.items.filter(i =>
       i.code.toLowerCase().includes(q) ||
       i.name.toLowerCase().includes(q) ||
-      (i.barcode || '').includes(q)
+      (i.barcode||'').includes(q)
     ).slice(0, 10);
     res.innerHTML = matches.length ? matches.map(i => {
       const s = getStockStatus(i);
       return `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between">
-        <div>
-          <div style="font-weight:600">${esc(i.name)}</div>
+        <div><div style="font-weight:600">${esc(i.name)}</div>
           <div style="font-size:12px;color:var(--muted)">${esc(i.code)} · ${esc(i.warehouse)} · ${esc(i.rack)}/${esc(i.shelf)}/${esc(i.bin)}</div>
-          <div style="margin-top:4px">
-            <span class="badge-status ${s.cls}">${s.label}</span>
-            <b style="margin-left:8px">${fmtQty(getStock(i.id))} ${esc(i.unit)}</b>
-          </div>
-        </div>
+          <div style="margin-top:4px"><span class="badge-status ${s.cls}">${s.label}</span>
+            <b style="margin-left:8px">${fmtQty(getStock(i.id))} ${esc(i.unit)}</b></div></div>
         <button class="btn sm" onclick="viewItemDetail(${i.id})">View</button>
       </div>`;
     }).join('') : '<div class="empty">No matches</div>';
   });
-}
-
-/* ============================================================================
-   PDF IMPORT — Upload PDF, parse, review, import to Supabase
-   ============================================================================ */
-let pdfImportState = {
-  file: null,
-  pages: 0,
-  rows: [],
-  categoryId: null,
-  supplierId: null,
-  warehouse: 'Main Warehouse',
-  building: '',
-  txnDate: today(),
-  status: 'Draft',
-};
-
-const UNITS_LIST = [
-  'Kg/pcs','Kg','kg','pcs','Pcs','PCS','pc','Pc',
-  'meter','m','M','roll','Roll','packet','Packet','Pack','pack','Packt','Pkt',
-  'Set','set','pail','Pail','gallon','Gallon','Litter','litter','L','ton','Ton',
-  'pair','Pair','m2','sqm','Bag','bag','sheet','Sheet',
-];
-const UNIT_PATTERN = UNITS_LIST
-  .map(u => u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  .sort((a, b) => b.length - a.length)
-  .join('|');
-
-function parseNum(s){
-  if(s == null) return 0;
-  let x = String(s).trim();
-  if(!x) return 0;
-  if(x.includes('.') && x.includes(',')) x = x.replace(/,/g, '');
-  else if(x.includes(',')) x = x.replace(/,/g, '');
-  const n = parseFloat(x);
-  return isNaN(n) ? 0 : n;
-}
-
-function parseInventoryLine(raw){
-  let line = String(raw || '').replace(/\s+/g, ' ').trim();
-  if(!line) return null;
-  if(/ተ\.ቁ|የእቃው|መለኪያ|ብዛት|ያንዱ|ጠቅላላ|ምርመራ/.test(line)) return null;
-  if(/^በአማራ|^የአስቆጠሪ|^የቆጠሪ|^ፈርማ/.test(line)) return null;
-
-  const RE = new RegExp(
-    '^(\\d{1,4})\\s*' +
-    '(.+?)\\s*' +
-    '(' + UNIT_PATTERN + ')\\s*' +
-    '([\\d,]+(?:\\.\\d+)?)\\s*' +
-    '([\\d,]+(?:\\.\\d+)?)\\s*' +
-    '([\\d,]+(?:\\.\\d+)?)' +
-    '\\s*(.*)$'
-  );
-  const m = line.match(RE);
-  if(!m) return null;
-
-  const no   = parseInt(m[1], 10);
-  const name = m[2].trim().replace(/[;:,]+$/, '');
-  const unit = m[3];
-  const qty  = parseNum(m[4]);
-  const cost = parseNum(m[5]);
-  const tot  = parseNum(m[6]);
-  const rem  = (m[7] || '').trim();
-
-  if(!name || name.length < 2) return null;
-  if(qty <= 0) return null;
-
-  const expected = qty * cost;
-  const variance = expected > 0 ? Math.abs(tot - expected) / expected : 1;
-  const plausible = tot === 0 || variance < 0.05;
-
-  return {
-    no, name, unit, qty,
-    unit_cost: plausible ? cost : (tot > 0 && qty > 0 ? +(tot / qty).toFixed(4) : cost),
-    total: tot,
-    remark: rem,
-    _keep: true,
-  };
-}
-
-async function extractPdfLines(arrayBuffer){
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const allLines = [];
-  const totalPages = pdf.numPages;
-
-  for(let p = 1; p <= totalPages; p++){
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent({ includeMarkedContent: false });
-
-    const lineMap = new Map();
-    for(const item of content.items){
-      if(!item.str || !item.str.trim()) continue;
-      const y = Math.round(item.transform[5]);
-      let bucket = null;
-      for(const k of lineMap.keys()){
-        if(Math.abs(k - y) <= 3){ bucket = k; break; }
-      }
-      const key = bucket !== null ? bucket : y;
-      if(!lineMap.has(key)) lineMap.set(key, []);
-      lineMap.get(key).push({ x: item.transform[4], text: item.str });
-    }
-
-    const sortedRows = [...lineMap.entries()]
-      .sort((a, b) => b[0] - a[0])
-      .map(([_, items]) => items.sort((a, b) => a.x - b.x).map(i => i.text).join(' ').trim())
-      .filter(Boolean);
-
-    for(const line of sortedRows) allLines.push({ page: p, text: line });
-  }
-
-  return { totalPages, lines: allLines };
-}
-
-function renderImportPDF(c){
-  pdfImportState.rows = [];
-  pdfImportState.file = null;
-
-  c.innerHTML = `
-    <div class="panel">
-      <div class="panel-head"><h4>📄 Import Inventory from PDF</h4></div>
-      <div class="panel-body">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-          Upload your annual inventory count PDF. The system will extract the rows,
-          let you review and edit them, then import them as items with opening stock.
-        </p>
-        <div id="pdfDrop"
-             style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;
-                    background:#f8fafc;cursor:pointer;transition:.15s">
-          <div style="font-size:56px;margin-bottom:10px">📥</div>
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px">Drop your PDF here or click to browse</div>
-          <div style="font-size:12.5px;color:var(--muted)">Supports .pdf · max ~20 MB</div>
-          <input type="file" id="pdfFile" accept="application/pdf" style="display:none">
-        </div>
-        <div id="pdfStatus" style="margin-top:14px"></div>
-      </div>
-    </div>
-    <div id="pdfPreview"></div>
-  `;
-
-  const drop = document.getElementById('pdfDrop');
-  const file = document.getElementById('pdfFile');
-
-  drop.onclick = () => file.click();
-  drop.ondragover = e => { e.preventDefault(); drop.style.background = '#eff6ff'; };
-  drop.ondragleave = () => { drop.style.background = '#f8fafc'; };
-  drop.ondrop = e => {
-    e.preventDefault();
-    drop.style.background = '#f8fafc';
-    if(e.dataTransfer.files[0]) handlePdfUpload(e.dataTransfer.files[0]);
-  };
-  file.onchange = e => {
-    if(e.target.files[0]) handlePdfUpload(e.target.files[0]);
-  };
-}
-
-async function handlePdfUpload(file){
-  if(file.type !== 'application/pdf'){ toast('Please select a PDF file', 'error'); return; }
-
-  const statusEl = document.getElementById('pdfStatus');
-  statusEl.innerHTML = `<div style="padding:12px;background:#eff6ff;border-radius:8px;font-size:13px">
-    ⏳ Reading <b>${esc(file.name)}</b>... (${(file.size / 1024).toFixed(0)} KB)
-  </div>`;
-
-  try {
-    const buf = await file.arrayBuffer();
-    const { totalPages, lines } = await extractPdfLines(buf);
-
-    statusEl.innerHTML = `<div style="padding:12px;background:#eff6ff;border-radius:8px;font-size:13px">
-      🔍 Extracted <b>${lines.length}</b> text lines from <b>${totalPages}</b> page(s). Parsing...
-    </div>`;
-
-    const rows = [];
-    let parsed = 0, skipped = 0;
-    for(const { text } of lines){
-      const row = parseInventoryLine(text);
-      if(row){ rows.push(row); parsed++; }
-      else skipped++;
-    }
-
-    pdfImportState.rows = rows;
-    pdfImportState.file = file.name;
-
-    statusEl.innerHTML = `<div style="padding:12px;background:${rows.length ? '#dcfce7' : '#fef3c7'};border-radius:8px;font-size:13px">
-      ${rows.length ? '✅' : '⚠️'} Parsed <b>${parsed}</b> inventory rows from <b>${totalPages}</b> page(s).
-      ${skipped ? `<span style="color:var(--muted)">(skipped ${skipped} non-data lines)</span>` : ''}
-    </div>`;
-
-    renderPdfPreview();
-  } catch(err){
-    console.error(err);
-    statusEl.innerHTML = `<div style="padding:12px;background:#fef2f2;color:#991b1b;border-radius:8px;font-size:13px">
-      ❌ Failed to parse: ${esc(err.message)}
-    </div>`;
-  }
-}
-
-function renderPdfPreview(){
-  const host = document.getElementById('pdfPreview');
-  const rows = pdfImportState.rows;
-
-  if(!rows.length){
-    host.innerHTML = `
-      <div class="panel">
-        <div class="empty-state">
-          <div class="icon">🤷</div>
-          <h3>No inventory rows detected</h3>
-          <p>The PDF's layout may differ. Check that it contains a table with columns
-             ተ.ቁ / የእቃው አይነት / መለኪያ / ብዛት / ያንዱ ዋጋ / ጠቅላላ ዋጋ.</p>
-        </div>
-      </div>`;
-    return;
-  }
-
-  const totalValue = rows.reduce((s, r) => s + (r._keep ? r.total : 0), 0);
-  const keptCount = rows.filter(r => r._keep).length;
-
-  host.innerHTML = `
-    <div class="panel">
-      <div class="panel-head"><h4>⚙️ Import Settings</h4></div>
-      <div class="panel-body">
-        <div class="form-grid">
-          <div class="field">
-            <label>Category for all items *</label>
-            <select id="imp_category" onchange="pdfImportState.categoryId = +this.value || null">
-              <option value="">-- Select --</option>
-              ${db.categories.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field">
-            <label>Supplier (optional)</label>
-            <select id="imp_supplier" onchange="pdfImportState.supplierId = +this.value || null">
-              <option value="">-- None --</option>
-              ${db.suppliers.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field">
-            <label>Warehouse</label>
-            <input id="imp_warehouse" value="Main Warehouse" onchange="pdfImportState.warehouse = this.value">
-          </div>
-          <div class="field">
-            <label>Building / Rack / Shelf / Bin</label>
-            <input id="imp_building" placeholder="e.g. A / R-03 / S-02 / B-05"
-                   onchange="pdfImportState.building = this.value">
-          </div>
-          <div class="field">
-            <label>Transaction Date</label>
-            <input type="date" id="imp_date" value="${today()}"
-                   onchange="pdfImportState.txnDate = this.value">
-          </div>
-          <div class="field">
-            <label>Transaction Status</label>
-            <select id="imp_status" onchange="pdfImportState.status = this.value">
-              <option value="Draft">Save as Draft (needs manager approval)</option>
-              <option value="Approved">Auto-Approve as Opening Balance</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-head">
-        <h4>📋 Preview (${keptCount} of ${rows.length} rows kept)</h4>
-        <div style="font-size:13px;color:var(--muted)">
-          Total value: <b style="color:var(--primary)">${fmtMoney(totalValue)}</b>
-        </div>
-      </div>
-      <div class="panel-body" style="padding:0;max-height:520px;overflow:auto">
-        <div class="table-wrap" style="border:none">
-          <table style="min-width:900px">
-            <thead style="position:sticky;top:0;background:#f8fafc;z-index:1">
-              <tr>
-                <th style="width:40px">✓</th>
-                <th style="width:60px">#</th>
-                <th>Item name (editable)</th>
-                <th style="width:90px">Unit</th>
-                <th style="width:100px">Qty</th>
-                <th style="width:110px">Unit cost</th>
-                <th style="width:110px">Total</th>
-                <th style="width:100px">Remark</th>
-              </tr>
-            </thead>
-            <tbody id="impRowsBody">
-              ${rows.map((r, idx) => `
-                <tr data-idx="${idx}" style="${r._keep ? '' : 'opacity:.45;text-decoration:line-through'}">
-                  <td><input type="checkbox" ${r._keep ? 'checked' : ''}
-                             onchange="toggleImportRow(${idx}, this.checked)"
-                             style="width:auto;cursor:pointer"></td>
-                  <td>${r.no}</td>
-                  <td><input value="${esc(r.name)}" onchange="editImportRow(${idx},'name',this.value)"
-                             style="font-size:13px;padding:5px 8px"></td>
-                  <td><input value="${esc(r.unit)}" onchange="editImportRow(${idx},'unit',this.value)"
-                             style="font-size:13px;padding:5px 8px"></td>
-                  <td><input type="number" value="${r.qty}" onchange="editImportRow(${idx},'qty',+this.value)"
-                             style="font-size:13px;padding:5px 8px;text-align:right"></td>
-                  <td><input type="number" step="0.01" value="${r.unit_cost}"
-                             onchange="editImportRow(${idx},'unit_cost',+this.value)"
-                             style="font-size:13px;padding:5px 8px;text-align:right"></td>
-                  <td><input type="number" step="0.01" value="${r.total}"
-                             onchange="editImportRow(${idx},'total',+this.value)"
-                             style="font-size:13px;padding:5px 8px;text-align:right"></td>
-                  <td><input value="${esc(r.remark)}" onchange="editImportRow(${idx},'remark',this.value)"
-                             style="font-size:12px;padding:5px 8px"></td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="panel-body" style="border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div style="display:flex;gap:8px">
-          <button class="btn sec sm" onclick="toggleAllImportRows(true)">Select all</button>
-          <button class="btn sec sm" onclick="toggleAllImportRows(false)">Deselect all</button>
-        </div>
-        <button class="btn" id="impBtn" onclick="runPdfImport()">
-          📥 Import ${keptCount} item(s) to Supabase
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function toggleImportRow(idx, keep){
-  pdfImportState.rows[idx]._keep = keep;
-  const tr = document.querySelector(`tr[data-idx="${idx}"]`);
-  if(tr){
-    tr.style.opacity = keep ? '1' : '.45';
-    tr.style.textDecoration = keep ? 'none' : 'line-through';
-  }
-}
-function toggleAllImportRows(keep){
-  pdfImportState.rows.forEach((r, i) => toggleImportRow(i, keep));
-  document.querySelectorAll('#impRowsBody input[type=checkbox]').forEach(cb => cb.checked = keep);
-}
-function editImportRow(idx, key, val){
-  pdfImportState.rows[idx][key] = val;
-  if(key === 'qty' || key === 'unit_cost'){
-    const r = pdfImportState.rows[idx];
-    r.total = +(r.qty * r.unit_cost).toFixed(2);
-    const tr = document.querySelector(`tr[data-idx="${idx}"]`);
-    const inputs = tr.querySelectorAll('input');
-    // Inputs: [checkbox, name, unit, qty, unit_cost, total, remark] — total is index 5
-    if(inputs[5]) inputs[5].value = r.total;
-  }
-}
-
-async function runPdfImport(){
-  const btn = document.getElementById('impBtn');
-  const rows = pdfImportState.rows.filter(r => r._keep && r.name && r.qty > 0);
-  if(!rows.length){ toast('No rows selected', 'error'); return; }
-  if(!pdfImportState.categoryId){ toast('Please select a category', 'error'); return; }
-
-  const confirmMsg = `Import ${rows.length} items?\n\n` +
-    `• New items will be created (codes auto-generated)\n` +
-    `• One ${pdfImportState.status === 'Approved' ? 'APPROVED opening' : 'DRAFT'} transaction will be created\n` +
-    `• Existing items (same name) will be reused and stock added`;
-  if(!confirm(confirmMsg)) return;
-
-  btn.disabled = true;
-  const originalText = btn.textContent;
-  btn.textContent = '⏳ Importing…';
-
-  try {
-    // 1. Existing items (match by lowercase name)
-    const { data: existingItems } = await sb.from('items').select('id,name');
-    const byName = new Map((existingItems || []).map(i => [i.name.toLowerCase(), i]));
-
-    // 2. Prepare new items
-    const prefix = `IMP${Date.now().toString().slice(-4)}`;
-    const rowToItemId = new Map();
-    const itemsToInsert = [];
-
-    for(let i = 0; i < rows.length; i++){
-      const r = rows[i];
-      const key = r.name.toLowerCase();
-      if(byName.has(key)){
-        rowToItemId.set(i, byName.get(key).id);
-        continue;
-      }
-      itemsToInsert.push({
-        code: `${prefix}-${String(i + 1).padStart(3, '0')}`,
-        name: r.name,
-        description: r.remark || null,
-        category_id: pdfImportState.categoryId,
-        unit: r.unit || 'pcs',
-        unit_cost: r.unit_cost || 0,
-        min_stock: 0, reorder_level: 0, max_stock: 0,
-        warehouse: pdfImportState.warehouse || 'Main Warehouse',
-        building: pdfImportState.building || null,
-        supplier_id: pdfImportState.supplierId || null,
-        status: 'Active',
-      });
-    }
-
-    // 3. Insert new items
-    if(itemsToInsert.length){
-      const { data, error } = await sb.from('items').insert(itemsToInsert).select('id,name');
-      if(error) throw error;
-      (data || []).forEach(it => {
-        const idx = rows.findIndex(r => r.name.toLowerCase() === it.name.toLowerCase());
-        if(idx >= 0) rowToItemId.set(idx, it.id);
-      });
-    }
-
-    // 4. Create transaction
-    const { data: number, error: numErr } = await sb.rpc('next_txn_number', { p_type: 'OPENING' });
-    if(numErr) throw numErr;
-
-    const txnPayload = {
-      number,
-      type: 'OPENING',
-      date: pdfImportState.txnDate || today(),
-      status: pdfImportState.status === 'Approved' ? 'Approved' : 'Draft',
-      requested_by: db.user.id,
-      supplier_id: pdfImportState.supplierId || null,
-      notes: `Imported from ${pdfImportState.file} — ${rows.length} items`,
-      reference: pdfImportState.file || 'PDF Import',
-    };
-    if(pdfImportState.status === 'Approved'){
-      txnPayload.approved_by = db.user.id;
-      txnPayload.approved_at = new Date().toISOString();
-      txnPayload.approval_comment = 'Auto-approved opening balance from PDF import';
-      txnPayload.submitted_at = new Date().toISOString();
-    }
-
-    const { data: txn, error: txnErr } = await sb.from('transactions')
-      .insert([txnPayload]).select().single();
-    if(txnErr) throw txnErr;
-
-    // 5. Insert transaction items
-    const itemRows = rows.map((r, i) => ({
-      transaction_id: txn.id,
-      item_id: rowToItemId.get(i),
-      qty: r.qty,
-      unit_cost: r.unit_cost,
-      unit: r.unit,
-    })).filter(l => l.item_id);
-
-    if(itemRows.length){
-      const { error: lineErr } = await sb.from('transaction_items').insert(itemRows);
-      if(lineErr) throw lineErr;
-    }
-
-    // 6. Approval history
-    await sb.from('approval_history').insert([{
-      transaction_id: txn.id,
-      user_id: db.user.id,
-      user_name: db.user.name,
-      action: pdfImportState.status === 'Approved' ? 'Approved' : 'Created',
-      comment: `Imported ${itemRows.length} items from ${pdfImportState.file}`,
-    }]);
-
-    // 7. Audit log
-    await sb.from('audit_logs').insert([{
-      user_id: db.user.id,
-      user_name: db.user.name,
-      action: 'PDF_IMPORT',
-      txn_number: number,
-      note: `${itemRows.length} items from ${pdfImportState.file}. New items: ${itemsToInsert.length}`,
-    }]);
-
-    toast(`✅ Imported ${itemRows.length} items (${itemsToInsert.length} new)`, 'success');
-
-    // 8. Refresh and go to items
-    await refreshItems();
-    await refreshTransactions();
-    await refreshStock();
-    setTimeout(() => go('items'), 600);
-
-  } catch(err){
-    console.error(err);
-    toast('Import failed: ' + (err.message || err), 'error');
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
 }
 
 /* ============================================================================
