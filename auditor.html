@@ -3,157 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Warehouse Auditor — Independent Review Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Warehouse Auditor — Independent Review</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{--primary:#1e40af;--primary-dark:#1e3a8a;--accent:#0284c7;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--success:#16a34a;--warn:#f59e0b;--danger:#dc2626;--info:#0284c7;--sidebar:#0c1e3e}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
-  button,input,select,textarea{font-family:inherit;font-size:14px}
-  button{cursor:pointer;border:none;background:none}
-
-  #loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0c1e3e,#1e3a8a);padding:20px;z-index:2000}
-  .login-box{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-  .login-box h1{font-size:20px;margin-bottom:4px;color:#1e3a8a}
-  .role-badge{display:inline-block;background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:14px}
-  .login-box p{color:var(--muted);margin-bottom:20px;font-size:12.5px}
-  .denied{background:#fef2f2;color:#991b1b;padding:10px;border-radius:8px;font-size:12.5px;margin-top:12px;display:none}
-
-  .app{display:none;min-height:100vh}.app.active{display:flex}
-  .sidebar{width:250px;background:var(--sidebar);color:#cbd5e1;flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:100}
-  .brand{padding:20px;border-bottom:1px solid #1e293b}
-  .brand h2{color:#fff;font-size:15px}
-  .brand small{color:#7dd3fc;font-size:11px;font-weight:600;letter-spacing:.06em}
-  .nav{flex:1;padding:10px 0}
-  .nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:#cbd5e1;text-decoration:none;font-size:13.5px;border-left:3px solid transparent;cursor:pointer}
-  .nav a:hover{background:#1e293b;color:#fff}
-  .nav a.active{background:#1e293b;color:#fff;border-left-color:#38bdf8}
-  .nav .section{padding:14px 20px 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#475569}
-  .nav .badge{margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
-  .main{flex:1;margin-left:250px;min-width:0}
-  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
-  .topbar h3{font-size:16px;flex:1}
-  .user-chip{display:flex;align-items:center;gap:8px;font-size:13px}
-  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px}
-  .content{padding:20px;max-width:1500px}
-  .menu-btn{display:none;width:36px;height:36px;border-radius:8px;background:#f1f5f9;place-items:center;font-size:16px}
-  .readonly-banner{background:#dbeafe;color:#1e40af;padding:8px 14px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:600}
-
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:18px}
-  .card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)}
-  .card .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .card .value{font-size:24px;font-weight:700;margin-top:6px}
-  .card .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
-  .card.warn .value{color:var(--warn)}.card.danger .value{color:var(--danger)}.card.success .value{color:var(--success)}.card.info .value{color:var(--info)}
-
-  .panel{background:#fff;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
-  .panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .panel-head h4{font-size:14.5px;flex:1}
-  .panel-body{padding:16px 18px}
-  .panel-body.p0{padding:0}
-
-  .table-wrap{overflow-x:auto;background:#fff}
-  table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
-  th{text-align:left;padding:10px 12px;background:#f8fafc;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap}
-  td{padding:10px 12px;border-bottom:1px solid #f1f5f9}
-  tr:hover td{background:#fafbfc}
-  .num{text-align:right;font-variant-numeric:tabular-nums}
-
-  .badge-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
-  .s-normal{background:#dcfce7;color:#166534}
-  .s-low{background:#fef3c7;color:#92400e}
-  .s-critical{background:#fed7aa;color:#9a3412}
-  .s-out{background:#fee2e2;color:#991b1b}
-  .s-draft{background:#e2e8f0;color:#475569}
-  .s-pending{background:#fef3c7;color:#92400e}
-  .s-approved{background:#dcfce7;color:#166534}
-  .s-rejected{background:#fee2e2;color:#991b1b}
-  .s-correction{background:#e0e7ff;color:#3730a3}
-  .s-reversed{background:#f3e8ff;color:#6b21a8}
-  .s-exception{background:#fecaca;color:#7f1d1d}
-  .pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;background:#e2e8f0;color:#475569;font-weight:600}
-
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;background:var(--primary);color:#fff;transition:.15s}
-  .btn:hover{background:var(--primary-dark)}
-  .btn.sec{background:#fff;color:var(--text);border:1px solid var(--border)}
-  .btn.sec:hover{background:#f8fafc}
-  .btn.sm{padding:6px 11px;font-size:12px}
-
-  .field{display:flex;flex-direction:column;gap:5px}
-  .field label{font-size:12px;color:var(--muted);font-weight:600}
-  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:#fff;outline:none}
-  input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(30,64,175,.12)}
-  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-
-  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:center;justify-content:center;z-index:1000;padding:14px}
-  .modal-overlay.active{display:flex}
-  .modal{background:#fff;border-radius:14px;width:100%;max-width:980px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.35)}
-  .modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-  .modal-head h4{flex:1;font-size:15.5px}
-  .modal-body{padding:20px;overflow-y:auto;flex:1}
-  .modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
-  .x-btn{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:18px;color:var(--muted)}
-
-  .empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
-  .toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;z-index:3000;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.3);transform:translateY(100px);opacity:0;transition:.25s}
-  .toast.show{transform:translateY(0);opacity:1}
-  .toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.warn{background:var(--warn)}
-  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-  .tabs button{padding:7px 13px;border-radius:20px;font-size:12.5px;background:#fff;border:1px solid var(--border)}
-  .tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-  .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13px}
-  .stat-row:last-child{border-bottom:none}
-  .stat-row b{font-variant-numeric:tabular-nums}
-  .chart-wrap{position:relative;height:280px}
-  .exc-card{border-left:4px solid var(--danger);background:#fef2f2;padding:12px 14px;border-radius:8px;margin-bottom:10px}
-  .exc-card.warn{border-left-color:var(--warn);background:#fffbeb}
-  .exc-card.info{border-left-color:var(--info);background:#eff6ff}
-  .exc-card .exc-title{font-weight:700;font-size:13.5px}
-  .exc-card .exc-body{font-size:12.5px;color:#475569;margin-top:4px}
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --primary:#1e40af; --primary-dark:#1e3a8a; --accent:#0284c7;
+    --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a;
+    --muted:#64748b; --success:#16a34a; --warn:#f59e0b; --danger:#dc2626;
+    --sidebar:#0c1e3e;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size:14px; }
+  button, input, select, textarea { font-family: inherit; font-size:14px; }
+  button { cursor:pointer; border:none; background:none; }
+  #loginScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg,#0c1e3e,#1e3a8a); padding:20px; z-index:2000; }
+  .login-box { background:#fff; border-radius:16px; padding:32px; width:100%; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .login-box h1 { font-size:20px; margin-bottom:4px; color:#1e3a8a; }
+  .role-badge { display:inline-block; background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; margin-bottom:14px; }
+  .login-box p { color: var(--muted); margin-bottom:20px; font-size:12.5px; }
+  .app { display:none; min-height:100vh; }
+  .app.active { display:flex; }
+  .sidebar { width:250px; background:var(--sidebar); color:#cbd5e1; flex-shrink:0; display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; overflow-y:auto; z-index:100; }
+  .brand { padding:20px; border-bottom:1px solid #1e293b; }
+  .brand h2 { color:#fff; font-size:15px; }
+  .brand small { color:#7dd3fc; font-size:11px; font-weight:600; }
+  .nav { flex:1; padding:10px 0; }
+  .nav a { display:flex; align-items:center; gap:10px; padding:11px 20px; color:#cbd5e1; font-size:13.5px; border-left:3px solid transparent; cursor:pointer; }
+  .nav a:hover { background:#1e293b; color:#fff; }
+  .nav a.active { background:#1e293b; color:#fff; border-left-color:#38bdf8; }
+  .nav .section { padding:14px 20px 6px; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:#475569; }
+  .main { flex:1; margin-left:250px; min-width:0; }
+  .topbar { background:#fff; border-bottom:1px solid var(--border); padding:12px 22px; display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:50; }
+  .topbar h3 { font-size:16px; flex:1; }
+  .user-chip { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-weight:600; font-size:12px; }
+  .content { padding:20px; max-width:1500px; }
+  .menu-btn { display:none; width:36px; height:36px; border-radius:8px; background:#f1f5f9; place-items:center; font-size:16px; }
+  .readonly-banner { background:#dbeafe; color:#1e40af; padding:8px 14px; border-radius:8px; font-size:12.5px; margin-bottom:14px; font-weight:600; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; margin-bottom:18px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; border:1px solid var(--border); }
+  .card .label { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .card .value { font-size:24px; font-weight:700; margin-top:6px; }
+  .card.warn .value { color:var(--warn); }
+  .card.danger .value { color:var(--danger); }
+  .card.success .value { color:var(--success); }
+  .card.info .value { color:#0284c7; }
+  .panel { background:#fff; border-radius:12px; border:1px solid var(--border); margin-bottom:18px; }
+  .panel-head { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .panel-head h4 { font-size:14.5px; flex:1; }
+  .panel-body { padding:16px 18px; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
+  th { text-align:left; padding:10px 12px; background:#f8fafc; color:var(--muted); font-weight:600; font-size:11.5px; text-transform:uppercase; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:10px 12px; border-bottom:1px solid #f1f5f9; }
+  .num { text-align:right; }
+  .badge-status { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+  .s-draft { background:#e2e8f0; color:#475569; }
+  .s-pending { background:#fef3c7; color:#92400e; }
+  .s-approved { background:#dcfce7; color:#166534; }
+  .s-rejected { background:#fee2e2; color:#991b1b; }
+  .s-correction { background:#e0e7ff; color:#3730a3; }
+  .s-reversed { background:#f3e8ff; color:#6b21a8; }
+  .s-exception { background:#fecaca; color:#7f1d1d; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; background:#e2e8f0; color:#475569; font-weight:600; }
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; font-weight:600; font-size:13px; background:var(--primary); color:#fff; }
+  .btn.sec { background:#fff; color:var(--text); border:1px solid var(--border); }
+  .btn.sm { padding:6px 11px; font-size:12px; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.55); display:none; align-items:center; justify-content:center; z-index:1000; padding:14px; }
+  .modal-overlay.active { display:flex; }
+  .modal { background:#fff; border-radius:14px; width:100%; max-width:960px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-head { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .modal-head h4 { flex:1; font-size:15.5px; }
+  .modal-body { padding:20px; overflow-y:auto; flex:1; }
+  .modal-foot { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .x-btn { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; font-size:18px; color:var(--muted); }
+  .empty { text-align:center; padding:30px; color:var(--muted); font-size:13px; }
+  .toast { position:fixed; bottom:20px; right:20px; background:#0f172a; color:#fff; padding:12px 18px; border-radius:10px; z-index:3000; font-size:13px; transform:translateY(100px); opacity:0; transition:.25s; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success { background:var(--success); }
+  .toast.error { background:var(--danger); }
+  .toast.warn { background:var(--warn); }
+  .stat-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--border); font-size:13px; }
+  .stat-row:last-child { border-bottom:none; }
+  .chart-wrap { position:relative; height:280px; }
   @media (max-width:900px){
-    .sidebar{transform:translateX(-100%);transition:.25s}
-    .sidebar.open{transform:translateX(0)}
-    .main{margin-left:0}.content{padding:14px}
-    .menu-btn{display:grid}
-    .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+    .sidebar { transform:translateX(-100%); transition:.25s; }
+    .sidebar.open { transform:translateX(0); }
+    .main { margin-left:0; }
+    .menu-btn { display:grid; }
   }
 </style>
 </head>
 <body>
 
-<!-- ==================== LOGIN ==================== -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="role-badge">🔍 WAREHOUSE AUDITOR</div>
     <h1>Auditor Review Portal</h1>
-    <p>Independent, read-only review of warehouse transactions, approvals, and audit trail. This portal is restricted to the <b>Auditor</b> and <b>Super Admin</b> role.</p>
-    <div class="field" style="margin-bottom:12px">
-      <label>Username</label>
-      <input id="loginUser" value="auditor" autocomplete="username">
+    <p>Independent, read-only review of warehouse transactions, approvals and audit trail.</p>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;color:var(--muted);font-weight:600">Username</label>
+      <input id="loginUser" value="auditor" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-top:5px">
     </div>
-    <div class="field" style="margin-bottom:16px">
-      <label>Password</label>
-      <input id="loginPass" type="password" value="auditor" autocomplete="current-password">
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;color:var(--muted);font-weight:600">Password</label>
+      <input id="loginPass" type="password" value="auditor" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-top:5px">
     </div>
-    <button class="btn" style="width:100%;justify-content:center;background:#1e40af" onclick="doLogin()">Sign In as Auditor</button>
-    <div class="denied" id="deniedMsg"></div>
-    <p style="margin-top:14px;font-size:11.5px;text-align:center;color:#94a3b8">
-      Demo: <b>auditor</b>/auditor · <b>admin</b>/admin
-    </p>
+    <button class="btn" id="loginBtn" style="width:100%;justify-content:center" onclick="doLogin()">Sign In</button>
+    <div id="deniedMsg" style="background:#fef2f2;color:#991b1b;padding:10px;border-radius:8px;font-size:12.5px;margin-top:12px;display:none"></div>
   </div>
 </div>
 
-<!-- ==================== APP ==================== -->
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <h2>🔍 Auditor Portal</h2>
-      <small id="brandSub">Read-Only Access</small>
+      <small>Read-Only Access</small>
     </div>
     <nav class="nav" id="nav"></nav>
   </aside>
-
   <div class="main">
     <div class="topbar">
       <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
@@ -164,7 +132,7 @@
           <div style="font-weight:600" id="userName">Auditor</div>
           <div style="font-size:11px;color:var(--muted)" id="userRole">Auditor</div>
         </div>
-        <button class="btn sec sm" onclick="doLogout()" style="margin-left:6px">Logout</button>
+        <button class="btn sec sm" onclick="logout()" style="margin-left:6px">Logout</button>
       </div>
     </div>
     <div class="content" id="content"></div>
@@ -177,1326 +145,65 @@
 </div>
 
 <script>
-/* ========================================================================
-   SHARED DATABASE (same key as manager.html & storekeeper.html)
-   ======================================================================== */
-const DB_KEY = 'wms_db_v3';
-function loadDB(){ try{const r=localStorage.getItem(DB_KEY);if(r)return JSON.parse(r);}catch(e){} return null; }
-function saveDB(){ localStorage.setItem(DB_KEY,JSON.stringify(db)); }
-let db = loadDB();
-
-if(!db){
-  // If for some reason the DB doesn't exist, create minimal so page doesn't crash.
-  // (Opening storekeeper.html or manager.html first will create full seed data.)
-  db = {
-    users:[{id:4,username:'auditor',password:'auditor',name:'Sara Auditor',role:'auditor',active:true},
-           {id:1,username:'admin',password:'admin',name:'System Admin',role:'super_admin',active:true}],
-    items:[],categories:[],suppliers:[],departments:[],
-    transactions:[],auditLogs:[],notifications:[],
-    settings:{currency:'ETB',company:'Ethiopian Warehouse Co.',slaHours:24},
-    seq:{IN:1,OUT:1,ADJ:1,OPEN:1}
-  };
-  saveDB();
-}
-
-/* ========================================================================
-   AUTH + PERMISSION LAYER
-   ======================================================================== */
-const SESSIONS = {};
-function genToken(){ return 'tok_'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
-
-const ROLE_PERMS = {
-  super_admin:['*'],
-  auditor:[
-    'AUDITOR_DASHBOARD_VIEW',
-    'ALL_TRANSACTIONS_VIEW',
-    'TRANSACTION_DETAILS_VIEW',
-    'APPROVAL_HISTORY_VIEW',
-    'AUDIT_LOG_VIEW',
-    'RECONCILIATION_VIEW',
-    'RECONCILIATION_CREATE',
-    'EXCEPTIONS_VIEW',
-    'ANALYSIS_VIEW',
-    'AUDIT_REPORTS_VIEW',
-    'AUDIT_EXPORT',
-  ],
-  warehouse_manager:[],
-  storekeeper:[]
-};
-function hasPermission(user, perm){
-  const p = ROLE_PERMS[user.role] || [];
-  return p.includes('*') || p.includes(perm);
-}
-function ok(data){ return {success:true, data}; }
-function err(code, error, message){ return {success:false, status:code, error, message}; }
-
-const Auth = {
-  login(username, password){
-    const user = db.users.find(u => u.username === username && u.password === password);
-    if(!user) return err(401,'INVALID_CREDENTIALS','Invalid username or password.');
-    if(!user.active) return err(403,'ACCOUNT_INACTIVE','Account is inactive.');
-    if(user.role !== 'auditor' && user.role !== 'super_admin'){
-      return err(403,'ROLE_NOT_ALLOWED','This portal is restricted to Auditors.');
-    }
-    const token = genToken();
-    SESSIONS[token] = { userId:user.id, role:user.role };
-    logAudit('LOGIN', user.id, user.name, {note:'Auditor portal login'});
-    return ok({token, user:{id:user.id, name:user.name, username:user.username, role:user.role}});
-  },
-  me(token){
-    const s = SESSIONS[token];
-    if(!s) return err(401,'NOT_AUTHENTICATED','Invalid or expired session.');
-    const u = db.users.find(x=>x.id===s.userId);
-    if(!u) return err(401,'NOT_AUTHENTICATED','User not found.');
-    return ok({id:u.id, name:u.name, username:u.username, role:u.role, permissions:ROLE_PERMS[u.role]||[]});
-  },
-  logout(token){
-    const s = SESSIONS[token];
-    if(s){
-      const u = db.users.find(x=>x.id===s.userId);
-      if(u) logAudit('LOGOUT', u.id, u.name, {});
-    }
-    delete SESSIONS[token];
-    return ok({loggedOut:true});
+/* ============================================================================
+   API CLIENT
+   ============================================================================ */
+const Api = (() => {
+  let token = localStorage.getItem('wms_token') || null;
+  let user  = JSON.parse(localStorage.getItem('wms_user') || 'null');
+  async function req(method, path, body){
+    const res = await fetch(path, {
+      method,
+      headers: { 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401){ logout(); throw new Error('Session expired'); }
+    return res.json().catch(() => ({ success:false, error:'BAD_JSON' }));
   }
-};
-function requireAuth(token, perm){
-  const me = Auth.me(token);
-  if(!me.success) return me;
-  if(perm && !hasPermission(me.data, perm)) return err(403,'FORBIDDEN',`Missing permission: ${perm}`);
-  return me;
-}
-
-/* ========================================================================
-   INVENTORY CALCULATION
-   ======================================================================== */
-function getStock(itemId){
-  let qty = 0;
-  db.transactions.forEach(t => {
-    if(t.status !== 'Approved') return;
-    t.items.forEach(l => {
-      if(l.itemId !== itemId) return;
-      if(['STOCK_IN','OPENING','ADJUSTMENT_IN'].includes(t.type)) qty += l.qty;
-      else if(['STOCK_OUT','ADJUSTMENT_OUT'].includes(t.type)) qty -= l.qty;
-    });
-  });
-  return qty;
-}
-function getItem(id){ return db.items.find(i=>i.id===id); }
-function getUser(id){ return db.users.find(u=>u.id===id); }
-function getSupplier(id){ return db.suppliers?.find(s=>s.id===id); }
-function getDepartment(id){ return db.departments?.find(d=>d.id===id); }
-function getCategory(id){ return db.categories?.find(c=>c.id===id); }
-
-/* ========================================================================
-   AUDIT LOG (append-only)
-   ======================================================================== */
-function logAudit(action, userId, userName, details={}){
-  db.auditLogs = db.auditLogs || [];
-  db.auditLogs.unshift({
-    id:'log_'+Math.random().toString(36).slice(2),
-    timestamp:new Date().toISOString(),
-    userId, userName, action,
-    txnNumber:details.txnNumber||'',
-    itemId:details.itemId||'',
-    itemName:details.itemName||'',
-    oldQty:details.oldQty ?? '',
-    newQty:details.newQty ?? '',
-    note:details.note||'',
-    ip:'local'
-  });
-  if(db.auditLogs.length > 20000) db.auditLogs.length = 20000;
-  saveDB();
-}
-
-/* ========================================================================
-   AUDITOR API — READ-ONLY
-   Note: no endpoint here modifies inventory, transactions, or audit logs.
-   ======================================================================== */
-const AuditorAPI = {
-  dashboard(token){
-    const auth = requireAuth(token,'AUDITOR_DASHBOARD_VIEW');
-    if(!auth.success) return auth;
-
-    const txs = db.transactions;
-    const byType = {STOCK_IN:0, STOCK_OUT:0, ADJUSTMENT:0, OPENING:0};
-    const byStatus = {Approved:0, Rejected:0, Reversed:0, 'Pending Approval':0, 'Needs Correction':0};
-    txs.forEach(t => {
-      const cat = t.type.startsWith('ADJUSTMENT') ? 'ADJUSTMENT' : t.type;
-      byType[cat] = (byType[cat]||0) + 1;
-      byStatus[t.status] = (byStatus[t.status]||0) + 1;
-    });
-    const exceptions = detectExceptions();
-    const recon = buildReconciliation();
-
-    // Chart data — last 30 days
-    const today = new Date();
-    const days = 30;
-    const chartLabels = [];
-    const chartIn = [];
-    const chartOut = [];
-    const chartAdj = [];
-    for(let i = days-1; i >= 0; i--){
-      const d = new Date(today); d.setDate(today.getDate()-i);
-      const key = d.toISOString().slice(0,10);
-      chartLabels.push(key.slice(5));
-      let inQty=0, outQty=0, adjQty=0;
-      txs.filter(t => t.date === key && t.status==='Approved').forEach(t => {
-        const q = t.items.reduce((a,l)=>a+l.qty,0);
-        if(t.type==='STOCK_IN') inQty += q;
-        else if(t.type==='STOCK_OUT') outQty += q;
-        else if(t.type.startsWith('ADJUSTMENT')) adjQty += q;
-      });
-      chartIn.push(inQty);
-      chartOut.push(outQty);
-      chartAdj.push(adjQty);
-    }
-
-    return ok({
-      totalTransactions: txs.length,
-      byType, byStatus,
-      exceptionsCount: exceptions.length,
-      discrepancies: recon.filter(r => r.status !== 'MATCH').length,
-      chartLabels, chartIn, chartOut, chartAdj,
-    });
-  },
-
-  listTransactions(token, filters={}){
-    const auth = requireAuth(token,'ALL_TRANSACTIONS_VIEW');
-    if(!auth.success) return auth;
-    let rows = db.transactions.slice();
-    if(filters.type) rows = rows.filter(t => t.type === filters.type);
-    if(filters.status) rows = rows.filter(t => t.status === filters.status);
-    if(filters.from) rows = rows.filter(t => t.date >= filters.from);
-    if(filters.to) rows = rows.filter(t => t.date <= filters.to);
-    if(filters.requester) rows = rows.filter(t => (getUser(t.requestedBy)?.name||'').toLowerCase().includes(filters.requester.toLowerCase()));
-    if(filters.approver) rows = rows.filter(t => (getUser(t.approvedBy)?.name||'').toLowerCase().includes(filters.approver.toLowerCase()));
-    if(filters.department) rows = rows.filter(t => t.departmentId === +filters.department);
-    rows.sort((a,b) => new Date(b.date+'T12:00') - new Date(a.date+'T12:00'));
-    return ok(rows.map(t => {
-      const qty = t.items.reduce((s,i)=>s+i.qty,0);
-      const val = t.items.reduce((s,i)=>s+i.qty*(i.unitCost||0),0);
-      const exceptions = detectTransactionExceptions(t);
-      return {
-        id:t.id, number:t.number, type:t.type, date:t.date, status:t.status,
-        requestedBy: getUser(t.requestedBy)?.name||'-',
-        approvedBy: t.approvedBy ? getUser(t.approvedBy)?.name : '-',
-        department: getDepartment(t.departmentId)?.name || getSupplier(t.supplierId)?.name || '',
-        qty, value: val,
-        items: t.items.length,
-        exceptions: exceptions.length,
-        exceptionReasons: exceptions.map(e=>e.title),
-      };
-    }));
-  },
-
-  getTransaction(token, id){
-    const auth = requireAuth(token,'TRANSACTION_DETAILS_VIEW');
-    if(!auth.success) return auth;
-    const t = db.transactions.find(x=>x.id===id);
-    if(!t) return err(404,'NOT_FOUND','Transaction not found.');
-    return ok(buildAuditorView(t));
-  },
-
-  auditLog(token, filters={}){
-    const auth = requireAuth(token,'AUDIT_LOG_VIEW');
-    if(!auth.success) return auth;
-    let rows = (db.auditLogs||[]).slice();
-    if(filters.from) rows = rows.filter(r => r.timestamp.slice(0,10) >= filters.from);
-    if(filters.to) rows = rows.filter(r => r.timestamp.slice(0,10) <= filters.to);
-    if(filters.user){
-      const q = filters.user.toLowerCase();
-      rows = rows.filter(r => (r.userName||'').toLowerCase().includes(q));
-    }
-    if(filters.action){
-      const q = filters.action.toLowerCase();
-      rows = rows.filter(r => (r.action||'').toLowerCase().includes(q));
-    }
-    if(filters.transaction){
-      const q = filters.transaction.toLowerCase();
-      rows = rows.filter(r => (r.txnNumber||'').toLowerCase().includes(q));
-    }
-    return ok(rows);
-  },
-
-  reconciliation(token){
-    const auth = requireAuth(token,'RECONCILIATION_VIEW');
-    if(!auth.success) return auth;
-    return ok(buildReconciliation());
-  },
-
-  createReconciliation(token, entry){
-    const auth = requireAuth(token,'RECONCILIATION_CREATE');
-    if(!auth.success) return auth;
-    // Reconciliation records physical counts only — do NOT change inventory.
-    // Store as audit entry.
-    const user = db.users.find(u=>u.id===auth.data.id);
-    logAudit('RECONCILIATION_CREATED', user.id, user.name, {
-      itemId: entry.itemId, itemName: getItem(entry.itemId)?.name || '',
-      note:`System ${entry.systemQty}, Physical ${entry.physicalQty}, Diff ${entry.physicalQty-entry.systemQty}`
-    });
-    return ok({created:true});
-  },
-
-  exceptions(token){
-    const auth = requireAuth(token,'EXCEPTIONS_VIEW');
-    if(!auth.success) return auth;
-    return ok(detectExceptions());
-  },
-};
-
-/* ========================================================================
-   EXCEPTION DETECTION
-   ======================================================================== */
-function detectExceptions(){
-  const list = [];
-
-  // 1) Self approval
-  db.transactions.forEach(t => {
-    if(t.approvedBy && t.approvedBy === t.requestedBy){
-      list.push({
-        severity:'critical',
-        title:'Self-Approval Detected',
-        txn: t.number,
-        detail:`Transaction ${t.number} was approved by the same user who created it (${getUser(t.approvedBy)?.name||'-'}).`
-      });
-    }
-  });
-
-  // 2) Large adjustment (>= 100 units)
-  db.transactions.filter(t => t.type.startsWith('ADJUSTMENT')).forEach(t => {
-    const q = t.items.reduce((s,i)=>s+i.qty,0);
-    if(q >= 100){
-      list.push({
-        severity:'warn',
-        title:'Large Adjustment',
-        txn: t.number,
-        detail:`Adjustment of ${q} units exceeds 100-unit threshold. Reason: ${t.reason||'-'}`
-      });
-    }
-  });
-
-  // 3) Repeated rejections by same requester (>=2)
-  const rejectedByUser = {};
-  db.transactions.filter(t => t.status === 'Rejected').forEach(t => {
-    rejectedByUser[t.requestedBy] = (rejectedByUser[t.requestedBy]||0) + 1;
-  });
-  Object.entries(rejectedByUser).forEach(([uid, count]) => {
-    if(count >= 2){
-      list.push({
-        severity:'warn',
-        title:'Repeated Rejections',
-        detail:`${getUser(+uid)?.name || 'User'} has ${count} rejected transactions.`
-      });
-    }
-  });
-
-  // 4) Approval delay
-  db.transactions.filter(t => t.status === 'Pending Approval').forEach(t => {
-    const hrs = (Date.now() - new Date(t.submittedAt||t.createdAt))/3600000;
-    if(hrs > db.settings.slaHours){
-      list.push({
-        severity:'warn',
-        title:'Approval Delay',
-        txn: t.number,
-        detail:`${t.number} has been pending for ${Math.floor(hrs)}h (SLA: ${db.settings.slaHours}h).`
-      });
-    }
-  });
-
-  // 5) Negative stock attempt (Stock OUT approved > stock available at time)
-  db.transactions.filter(t => t.status === 'Approved' && t.type === 'STOCK_OUT').forEach(t => {
-    // Replay up to just before this txn
-    let running = {};
-    db.transactions.filter(x => x.status==='Approved' && new Date(x.date) <= new Date(t.date) && x.id !== t.id).forEach(x => {
-      x.items.forEach(l => {
-        running[l.itemId] = running[l.itemId] || 0;
-        if(['STOCK_IN','OPENING','ADJUSTMENT_IN'].includes(x.type)) running[l.itemId] += l.qty;
-        else if(['STOCK_OUT','ADJUSTMENT_OUT'].includes(x.type)) running[l.itemId] -= l.qty;
-      });
-    });
-    t.items.forEach(l => {
-      const avail = running[l.itemId] || 0;
-      if(l.qty > avail){
-        list.push({
-          severity:'critical',
-          title:'Negative Stock Attempt',
-          txn: t.number,
-          detail:`${t.number} issued ${l.qty} of ${getItem(l.itemId)?.name} but only ${avail} was available.`
-        });
-      }
-    });
-  });
-
-  // 6) Stock discrepancies from adjustments
-  db.transactions.filter(t => t.type.startsWith('ADJUSTMENT') && t.status === 'Approved').forEach(t => {
-    if(Math.abs(t.adjDiff||0) >= 10){
-      list.push({
-        severity:'warn',
-        title:'Stock Discrepancy',
-        txn: t.number,
-        detail:`Adjustment of ${t.adjDiff} units for ${getItem(t.items[0]?.itemId)?.name} (system ${t.adjSystem} → physical ${t.adjPhysical}).`
-      });
-    }
-  });
-
-  // 7) Excessive reversals
-  const revCount = db.transactions.filter(t => t.status === 'Reversed').length;
-  if(revCount >= 3){
-    list.push({
-      severity:'warn',
-      title:'Excessive Reversals',
-      detail:`${revCount} transactions have been reversed. Review for control weakness.`
-    });
+  function login(t,u){
+    token = t; user = u;
+    localStorage.setItem('wms_token', t);
+    localStorage.setItem('wms_user', JSON.stringify(u));
   }
-
-  // 8) Unapproved inventory change — detect stock movements with no matching approved txn.
-  // Since all inventory changes go through approved txns in this system, this is
-  // always consistent. Kept for extensibility.
-
-  list.sort((a,b)=>{
-    const order = {critical:0, warn:1, info:2};
-    return (order[a.severity]||9) - (order[b.severity]||9);
-  });
-  return list;
-}
-
-function detectTransactionExceptions(t){
-  const found = [];
-  if(t.approvedBy && t.approvedBy === t.requestedBy) found.push({title:'Self Approval'});
-  if(t.type.startsWith('ADJUSTMENT')){
-    const q = t.items.reduce((s,i)=>s+i.qty,0);
-    if(q >= 100) found.push({title:'Large Adjustment'});
+  function logout(){
+    token = null; user = null;
+    localStorage.removeItem('wms_token');
+    localStorage.removeItem('wms_user');
+    location.reload();
   }
-  return found;
-}
-
-/* ========================================================================
-   RECONCILIATION
-   ======================================================================== */
-function buildReconciliation(){
-  return db.items.map(i => {
-    const systemQty = getStock(i.id);
-    // Get last physical count from adjustments
-    const lastAdj = db.transactions
-      .filter(t => t.type.startsWith('ADJUSTMENT') && t.status === 'Approved' && t.items.some(l=>l.itemId===i.id))
-      .sort((a,b)=> new Date(b.date) - new Date(a.date))[0];
-    const physicalQty = lastAdj ? (lastAdj.adjPhysical ?? systemQty) : systemQty;
-    const diff = physicalQty - systemQty;
-    let status = 'MATCH';
-    if(Math.abs(diff) >= 10 || (systemQty>0 && Math.abs(diff)/systemQty > 0.05)) status = 'CRITICAL DIFFERENCE';
-    else if(diff !== 0) status = 'DIFFERENCE';
-    return {
-      itemId:i.id, itemName:i.name, itemCode:i.code, unit:i.unit,
-      systemQty, physicalQty, diff,
-      valueDiff: diff * (i.unitCost||0),
-      lastCount: lastAdj?.date || null,
-      status
-    };
-  });
-}
-
-/* ========================================================================
-   AUDITOR VIEW BUILDER
-   ======================================================================== */
-function buildAuditorView(t){
-  const items = t.items.map(l => {
-    const item = getItem(l.itemId);
-    const current = getStock(l.itemId);
-    // Reconstruct stock BEFORE this transaction
-    let before = current;
-    if(t.status === 'Approved'){
-      // subtract the effect of this txn
-      if(['STOCK_IN','OPENING','ADJUSTMENT_IN'].includes(t.type)) before = current - l.qty;
-      else if(['STOCK_OUT','ADJUSTMENT_OUT'].includes(t.type)) before = current + l.qty;
-    }
-    let after = current;
-    return {
-      itemId:l.itemId, name:item?.name||'', code:item?.code||'', unit:l.unit||item?.unit||'',
-      qty:l.qty, unitCost:l.unitCost||0, total:l.qty*(l.unitCost||0),
-      previousStock: before,
-      newStock: after,
-      location: `${item?.warehouse||''} · ${item?.rack||''}/${item?.shelf||''}/${item?.bin||''}`,
-      adjSystem: t.adjSystem, adjPhysical: t.adjPhysical, adjDiff: t.adjDiff
-    };
-  });
-  const approver = t.approvedBy ? getUser(t.approvedBy) : (t.rejectedBy ? getUser(t.rejectedBy) : null);
-  const rejectionUser = t.rejectedBy ? getUser(t.rejectedBy) : null;
-  const returnUser = t.returnedBy ? getUser(t.returnedBy) : null;
-
   return {
-    id:t.id, number:t.number, type:t.type, date:t.date, status:t.status,
-    reference:t.reference||'', invoice:t.invoice||'', purpose:t.purpose||'',
-    reason:t.reason||'', notes:t.notes||'',
-    supplier: t.supplierId ? getSupplier(t.supplierId)?.name : '',
-    department: t.departmentId ? getDepartment(t.departmentId)?.name : '',
-    recipient: t.recipient||'',
-    requestedBy:{id:t.requestedBy, name:getUser(t.requestedBy)?.name||'-', role:getUser(t.requestedBy)?.role||''},
-    approver: approver ? {id:approver.id, name:approver.name, role:approver.role, date:t.approvedAt, comment:t.approvalComment||''} : null,
-    rejector: rejectionUser ? {id:rejectionUser.id, name:rejectionUser.name, date:t.rejectedAt, reason:t.rejectionReason||''} : null,
-    returner: returnUser ? {id:returnUser.id, name:returnUser.name, date:t.returnedAt, comment:t.correctionComment||''} : null,
-    createdAt:t.createdAt, submittedAt:t.submittedAt,
-    approvedAt:t.approvedAt, rejectedAt:t.rejectedAt, returnedAt:t.returnedAt,
-    items,
-    approvalHistory:(t.approvalHistory||[]).slice().sort((a,b)=> new Date(a.date)-new Date(b.date)),
-    totalQty: items.reduce((s,i)=>s+i.qty,0),
-    totalValue: items.reduce((s,i)=>s+i.total,0),
+    get token(){ return token; },
+    get user(){ return user; },
+    login, logout,
+    isLoggedIn: () => !!token,
+    doLogin: (u,p) => req('POST','/api/auth/login',{username:u,password:p}),
+    transactions: (q='') => req('GET','/api/transactions' + q),
+    transaction:  (id)   => req('GET',`/api/transactions/${id}`),
+    stock:        ()     => req('GET','/api/stock'),
+    items:        ()     => req('GET','/api/items'),
+    auditLogs:    (q='') => req('GET','/api/audit-logs' + q),
   };
-}
+})();
 
-/* ========================================================================
-   UI
-   ======================================================================== */
-let currentUser = null;
-let authToken = null;
+let db = { user:null, transactions:[], stock:[], items:[] };
 let currentPage = 'dashboard';
 
-const ROUTES = {
-  dashboard:{ title:'Auditor Dashboard', render:renderDashboard },
-  transactions:{ title:'All Transactions', render:renderTransactions },
-  movements:{ title:'Stock Movement', render:renderMovements },
-  approvals:{ title:'Approval History', render:renderApprovalsHistory },
-  auditlog:{ title:'Audit Log', render:renderAuditLog },
-  reconciliation:{ title:'Stock Reconciliation', render:renderReconciliation },
-  exceptions:{ title:'Audit Exceptions', render:renderExceptions },
-  analysis:{ title:'Inventory Analysis', render:renderAnalysis },
-  reports:{ title:'Audit Reports', render:renderReports },
-};
+/* Helpers */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmt = n => (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtQty = n => (Number(n)||0).toLocaleString('en-US');
+const fmtMoney = n => `ETB ${fmt(n)}`;
+const fmtDate = d => d ? new Date(d).toISOString().slice(0,10) : '-';
+const fmtDateTime = d => d ? new Date(d).toLocaleString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
 
-function buildNav(){
-  const nav = document.getElementById('nav');
-  const exc = AuditorAPI.exceptions(authToken).data || [];
-  const crit = exc.filter(e=>e.severity==='critical').length;
-
-  nav.innerHTML = `
-    <div class="section">AUDITOR</div>
-    <a data-page="dashboard" onclick="go('dashboard')"><span>📊</span><span>Auditor Dashboard</span></a>
-    <div class="section">REVIEW</div>
-    <a data-page="transactions" onclick="go('transactions')"><span>📋</span><span>All Transactions</span></a>
-    <a data-page="movements" onclick="go('movements')"><span>📈</span><span>Stock Movement</span></a>
-    <a data-page="approvals" onclick="go('approvals')"><span>✅</span><span>Approval History</span></a>
-    <a data-page="auditlog" onclick="go('auditlog')"><span>🔒</span><span>Audit Log</span></a>
-    <div class="section">CONTROL</div>
-    <a data-page="reconciliation" onclick="go('reconciliation')"><span>⚖️</span><span>Stock Reconciliation</span></a>
-    <a data-page="exceptions" onclick="go('exceptions')"><span>🚨</span><span>Audit Exceptions</span>${crit?`<span class="badge">${crit}</span>`:''}</a>
-    <a data-page="analysis" onclick="go('analysis')"><span>📉</span><span>Inventory Analysis</span></a>
-    <div class="section">REPORTS</div>
-    <a data-page="reports" onclick="go('reports')"><span>📄</span><span>Audit Reports</span></a>
-  `;
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2600);
 }
-function go(page){
-  currentPage = page;
-  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active', a.dataset.page===page));
-  const r = ROUTES[page] || ROUTES.dashboard;
-  document.getElementById('pageTitle').textContent = r.title;
-  document.getElementById('content').innerHTML = '';
-  r.render(document.getElementById('content'));
-}
-function doLogin(){
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const res = Auth.login(u, p);
-  if(!res.success){
-    const d = document.getElementById('deniedMsg');
-    d.textContent = '❌ ' + (res.message || 'Login failed');
-    d.style.display = 'block';
-    return;
-  }
-  authToken = res.data.token;
-  currentUser = res.data.user;
-  localStorage.setItem('wms_auditor_token', authToken);
-  enterApp();
-}
-function doLogout(){
-  if(authToken) Auth.logout(authToken);
-  authToken = null; currentUser = null;
-  localStorage.removeItem('wms_auditor_token');
-  document.getElementById('app').classList.remove('active');
-  document.getElementById('loginScreen').style.display = 'flex';
-}
-function enterApp(){
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').classList.add('active');
-  document.getElementById('userName').textContent = currentUser.name;
-  document.getElementById('userRole').textContent = currentUser.role === 'super_admin' ? 'Super Admin (Audit)' : 'Auditor';
-  document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
-  buildNav();
-  go('dashboard');
-}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('active'); }
+function openModal(html){ document.getElementById('modal').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); }
 
-/* ========================================================================
-   DASHBOARD
-   ======================================================================== */
-let dashChart = null;
-function renderDashboard(c){
-  const d = AuditorAPI.dashboard(authToken).data;
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 READ-ONLY ACCESS — The auditor cannot approve, reject, edit, or delete any transaction or inventory record.</div>
-
-    <div class="cards">
-      <div class="card"><div class="label">Total Transactions</div><div class="value">${d.totalTransactions}</div></div>
-      <div class="card info"><div class="label">Stock IN</div><div class="value">${d.byType.STOCK_IN||0}</div></div>
-      <div class="card info"><div class="label">Stock OUT</div><div class="value">${d.byType.STOCK_OUT||0}</div></div>
-      <div class="card info"><div class="label">Adjustments</div><div class="value">${d.byType.ADJUSTMENT||0}</div></div>
-      <div class="card success"><div class="label">Approved</div><div class="value">${d.byStatus.Approved||0}</div></div>
-      <div class="card danger"><div class="label">Rejected</div><div class="value">${d.byStatus.Rejected||0}</div></div>
-      <div class="card warn"><div class="label">Reversed</div><div class="value">${d.byStatus.Reversed||0}</div></div>
-      <div class="card warn"><div class="label">Pending</div><div class="value">${d.byStatus['Pending Approval']||0}</div></div>
-      <div class="card ${d.discrepancies>0?'danger':'success'}"><div class="label">Stock Discrepancies</div><div class="value">${d.discrepancies}</div></div>
-      <div class="card ${d.exceptionsCount>0?'danger':'success'}"><div class="label">Audit Exceptions</div><div class="value">${d.exceptionsCount}</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>📊 Daily Stock Movement (Last 30 Days)</h4></div>
-      <div class="panel-body"><div class="chart-wrap"><canvas id="dashChart"></canvas></div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>📈 Transaction Volume & Status</h4></div>
-      <div class="panel-body">
-        <div class="stat-row"><span>Total Stock IN</span><b>${d.byType.STOCK_IN||0} transactions</b></div>
-        <div class="stat-row"><span>Total Stock OUT</span><b>${d.byType.STOCK_OUT||0} transactions</b></div>
-        <div class="stat-row"><span>Total Adjustments</span><b>${d.byType.ADJUSTMENT||0} transactions</b></div>
-        <div class="stat-row"><span>Approved</span><b>${d.byStatus.Approved||0}</b></div>
-        <div class="stat-row"><span>Rejected</span><b>${d.byStatus.Rejected||0}</b></div>
-        <div class="stat-row"><span>Reversed</span><b>${d.byStatus.Reversed||0}</b></div>
-        <div class="stat-row"><span>Pending Approval</span><b>${d.byStatus['Pending Approval']||0}</b></div>
-      </div>
-    </div>
-  `;
-  setTimeout(() => {
-    const ctx = document.getElementById('dashChart');
-    if(!ctx) return;
-    if(dashChart) dashChart.destroy();
-    dashChart = new Chart(ctx, {
-      type:'line',
-      data:{
-        labels: d.chartLabels,
-        datasets:[
-          {label:'Stock IN', data:d.chartIn, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', fill:true, tension:.3, borderWidth:2},
-          {label:'Stock OUT', data:d.chartOut, borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,.1)', fill:true, tension:.3, borderWidth:2},
-          {label:'Adjustments', data:d.chartAdj, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', fill:true, tension:.3, borderWidth:2},
-        ]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
-    });
-  }, 30);
-}
-
-/* ========================================================================
-   ALL TRANSACTIONS
-   ======================================================================== */
-function renderTransactions(c){
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 READ-ONLY — You can inspect transactions but cannot modify them.</div>
-    <div class="panel">
-      <div class="panel-head"><h4>📋 All Transactions</h4></div>
-      <div class="panel-body">
-        <div class="form-grid">
-          <div class="field"><label>From</label><input type="date" id="f_from"></div>
-          <div class="field"><label>To</label><input type="date" id="f_to"></div>
-          <div class="field"><label>Type</label>
-            <select id="f_type"><option value="">All</option>
-              <option value="STOCK_IN">Stock IN</option>
-              <option value="STOCK_OUT">Stock OUT</option>
-              <option value="ADJUSTMENT_IN">Adjustment IN</option>
-              <option value="ADJUSTMENT_OUT">Adjustment OUT</option>
-              <option value="OPENING">Opening</option>
-            </select>
-          </div>
-          <div class="field"><label>Status</label>
-            <select id="f_status"><option value="">All</option>
-              <option>Draft</option><option>Pending Approval</option><option>Approved</option>
-              <option>Rejected</option><option>Needs Correction</option><option>Reversed</option>
-            </select>
-          </div>
-          <div class="field"><label>Requester</label><input id="f_requester" placeholder="Name"></div>
-          <div class="field"><label>Approver</label><input id="f_approver" placeholder="Name"></div>
-          <div class="field" style="justify-content:flex-end">
-            <button class="btn" onclick="applyTxnFilters()">Apply</button>
-          </div>
-          <div class="field" style="justify-content:flex-end">
-            <button class="btn sec" onclick="resetTxnFilters()">Reset</button>
-          </div>
-        </div>
-      </div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th><th>Transaction No.</th><th>Type</th><th>Requested By</th>
-                <th>Approved By</th><th class="num">Qty</th><th class="num">Value</th>
-                <th>Status</th><th>Exceptions</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="txnBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  applyTxnFilters();
-}
-function applyTxnFilters(){
-  const filters = {
-    from:document.getElementById('f_from').value,
-    to:document.getElementById('f_to').value,
-    type:document.getElementById('f_type').value,
-    status:document.getElementById('f_status').value,
-    requester:document.getElementById('f_requester').value.trim(),
-    approver:document.getElementById('f_approver').value.trim(),
-  };
-  const rows = AuditorAPI.listTransactions(authToken, filters).data || [];
-  document.getElementById('txnBody').innerHTML = rows.length ? rows.map(r => `
-    <tr>
-      <td>${r.date}</td>
-      <td><b>${esc(r.number)}</b></td>
-      <td>${typePill(r.type)}</td>
-      <td>${esc(r.requestedBy)}</td>
-      <td>${esc(r.approvedBy)}</td>
-      <td class="num">${fmtQty(r.qty)}</td>
-      <td class="num">${fmtMoney(r.value)}</td>
-      <td>${statusPill(r.status)}</td>
-      <td>${r.exceptions>0 ? `<span class="badge-status s-exception">⚠️ ${r.exceptions}</span>`:''}</td>
-      <td><button class="btn sec sm" onclick="openAuditorTransaction('${r.id}')">View</button></td>
-    </tr>`).join('') : '<tr><td colspan="10" class="empty">No transactions match filters</td></tr>';
-}
-function resetTxnFilters(){
-  ['f_from','f_to','f_requester','f_approver'].forEach(id => document.getElementById(id).value='');
-  ['f_type','f_status'].forEach(id => document.getElementById(id).value='');
-  applyTxnFilters();
-}
-
-/* ========================================================================
-   STOCK MOVEMENT
-   ======================================================================== */
-function renderMovements(c){
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 READ-ONLY — Movement derived from approved transactions only.</div>
-    <div class="panel">
-      <div class="panel-head"><h4>📈 Stock Movement Report</h4>
-        <button class="btn sec sm" onclick="exportMovements()">⬇ Export CSV</button></div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Number</th><th>Item</th><th>Type</th><th class="num">IN</th><th class="num">OUT</th><th class="num">Balance</th><th>Status</th></tr></thead>
-            <tbody id="movBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  // Build chronological movement (approved only)
-  const balances = {};
-  const rows = [];
-  db.transactions
-    .filter(t => t.status === 'Approved')
-    .sort((a,b) => (a.date < b.date ? -1 : 1))
-    .forEach(t => {
-      t.items.forEach(l => {
-        const item = getItem(l.itemId);
-        balances[l.itemId] = balances[l.itemId] || 0;
-        let inQ = 0, outQ = 0;
-        if(['STOCK_IN','OPENING','ADJUSTMENT_IN'].includes(t.type)){ inQ = l.qty; balances[l.itemId] += l.qty; }
-        else if(['STOCK_OUT','ADJUSTMENT_OUT'].includes(t.type)){ outQ = l.qty; balances[l.itemId] -= l.qty; }
-        rows.push({
-          date:t.date, number:t.number, item:item?.name||'-', type:t.type,
-          inQ, outQ, balance:balances[l.itemId], status:t.status
-        });
-      });
-    });
-  document.getElementById('movBody').innerHTML = rows.length ? rows.slice().reverse().map(r => `
-    <tr>
-      <td>${r.date}</td>
-      <td>${esc(r.number)}</td>
-      <td>${esc(r.item)}</td>
-      <td>${typePill(r.type)}</td>
-      <td class="num" style="color:#16a34a">${r.inQ?fmtQty(r.inQ):'-'}</td>
-      <td class="num" style="color:#dc2626">${r.outQ?fmtQty(r.outQ):'-'}</td>
-      <td class="num"><b>${fmtQty(r.balance)}</b></td>
-      <td>${statusPill(r.status)}</td>
-    </tr>`).join('') : '<tr><td colspan="8" class="empty">No approved transactions</td></tr>';
-  window.__movements = rows;
-}
-function exportMovements(){
-  const rows = [['Date','Number','Item','Type','IN','OUT','Balance','Status']];
-  (window.__movements||[]).forEach(r => rows.push([r.date, r.number, r.item, r.type, r.inQ, r.outQ, r.balance, r.status]));
-  downloadCSV('stock_movement_audit', rows);
-}
-
-/* ========================================================================
-   APPROVAL HISTORY
-   ======================================================================== */
-function renderApprovalsHistory(c){
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 READ-ONLY — Approval decisions recorded permanently in the audit trail.</div>
-    <div class="panel">
-      <div class="panel-head"><h4>✅ Approval History</h4></div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Transaction</th><th>Type</th><th>Requester</th><th>Approver</th><th>Decision</th><th>Comment</th></tr></thead>
-            <tbody id="apprBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  const rows = [];
-  db.transactions.forEach(t => {
-    (t.approvalHistory||[]).forEach(h => {
-      const u = db.users.find(x=>x.id===h.userId);
-      if(!u) return;
-      if(!['super_admin','warehouse_manager'].includes(u.role)) return;
-      if(!['Approved','Rejected','Returned','Returned for Correction','Reversed'].includes(h.action)) return;
-      rows.push({
-        date:h.date, number:t.number, type:t.type,
-        requester: getUser(t.requestedBy)?.name || '-',
-        approver: h.userName, decision:h.action, comment:h.comment||''
-      });
-    });
-  });
-  rows.sort((a,b)=> new Date(b.date) - new Date(a.date));
-  document.getElementById('apprBody').innerHTML = rows.length ? rows.map(r => `
-    <tr>
-      <td>${fmtDateTime(r.date)}</td>
-      <td><b>${esc(r.number)}</b></td>
-      <td>${typePill(r.type)}</td>
-      <td>${esc(r.requester)}</td>
-      <td>${esc(r.approver)}</td>
-      <td>${decisionPill(r.decision)}</td>
-      <td style="color:var(--muted);font-size:12.5px">${esc(r.comment)}</td>
-    </tr>`).join('') : '<tr><td colspan="7" class="empty">No approval decisions yet</td></tr>';
-}
-
-/* ========================================================================
-   AUDIT LOG
-   ======================================================================== */
-function renderAuditLog(c){
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 APPEND-ONLY — Audit records cannot be edited or deleted through any interface.</div>
-    <div class="panel">
-      <div class="panel-head"><h4>🔒 Audit Log</h4>
-        <button class="btn sec sm" onclick="exportAuditLog()">⬇ Export CSV</button></div>
-      <div class="panel-body">
-        <div class="form-grid">
-          <div class="field"><label>From</label><input type="date" id="al_from"></div>
-          <div class="field"><label>To</label><input type="date" id="al_to"></div>
-          <div class="field"><label>User</label><input id="al_user" placeholder="User name"></div>
-          <div class="field"><label>Action</label><input id="al_action" placeholder="e.g. Approved"></div>
-          <div class="field"><label>Transaction</label><input id="al_txn" placeholder="e.g. OUT-00001"></div>
-          <div class="field" style="justify-content:flex-end">
-            <button class="btn" onclick="applyAuditFilters()">Apply</button>
-          </div>
-        </div>
-      </div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date/Time</th><th>User</th><th>Action</th><th>Transaction</th><th>Item</th><th class="num">Old Value</th><th class="num">New Value</th><th>Note</th></tr></thead>
-            <tbody id="alBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  applyAuditFilters();
-}
-function applyAuditFilters(){
-  const filters = {
-    from:document.getElementById('al_from').value,
-    to:document.getElementById('al_to').value,
-    user:document.getElementById('al_user').value.trim(),
-    action:document.getElementById('al_action').value.trim(),
-    transaction:document.getElementById('al_txn').value.trim(),
-  };
-  const rows = AuditorAPI.auditLog(authToken, filters).data || [];
-  document.getElementById('alBody').innerHTML = rows.length ? rows.slice(0,500).map(r => `
-    <tr>
-      <td>${fmtDateTime(r.timestamp)}</td>
-      <td><b>${esc(r.userName)}</b></td>
-      <td>${esc(r.action)}</td>
-      <td>${esc(r.txnNumber||'-')}</td>
-      <td>${esc(r.itemName||'-')}</td>
-      <td class="num">${r.oldQty !== '' ? esc(r.oldQty) : '-'}</td>
-      <td class="num">${r.newQty !== '' ? esc(r.newQty) : '-'}</td>
-      <td style="color:var(--muted);font-size:12px">${esc(r.note||'')}</td>
-    </tr>`).join('') : '<tr><td colspan="8" class="empty">No audit logs match</td></tr>';
-}
-function exportAuditLog(){
-  const rows = [['Timestamp','User','Action','Transaction','Item','Old Qty','New Qty','Note']];
-  (db.auditLogs||[]).forEach(l => rows.push([l.timestamp, l.userName, l.action, l.txnNumber, l.itemName, l.oldQty, l.newQty, l.note]));
-  downloadCSV('audit_log', rows);
-}
-
-/* ========================================================================
-   STOCK RECONCILIATION
-   ======================================================================== */
-function renderReconciliation(c){
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 Reconciliation is a read-only comparison. Physical counts create adjustment REQUESTS (which managers approve).</div>
-    <div class="cards" id="recSummary"></div>
-    <div class="panel">
-      <div class="panel-head"><h4>⚖️ Stock Reconciliation — System vs Physical</h4>
-        <button class="btn sec sm" onclick="exportReconciliation()">⬇ Export CSV</button></div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item</th><th class="num">System Qty</th><th class="num">Physical Qty</th><th class="num">Difference</th><th class="num">Value Difference</th><th>Last Count</th><th>Status</th><th></th></tr></thead>
-            <tbody id="recBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  const rows = AuditorAPI.reconciliation(authToken).data || [];
-  const matches = rows.filter(r => r.status === 'MATCH').length;
-  const diffs = rows.filter(r => r.status === 'DIFFERENCE').length;
-  const critical = rows.filter(r => r.status === 'CRITICAL DIFFERENCE').length;
-  document.getElementById('recSummary').innerHTML = `
-    <div class="card success"><div class="label">Matching Items</div><div class="value">${matches}</div></div>
-    <div class="card warn"><div class="label">Differences</div><div class="value">${diffs}</div></div>
-    <div class="card danger"><div class="label">Critical Differences</div><div class="value">${critical}</div></div>
-    <div class="card info"><div class="label">Accuracy</div><div class="value">${rows.length ? ((matches/rows.length)*100).toFixed(1)+'%' : 'N/A'}</div></div>
-  `;
-  document.getElementById('recBody').innerHTML = rows.length ? rows.map(r => {
-    const cls = r.status === 'MATCH' ? 's-normal' : r.status === 'CRITICAL DIFFERENCE' ? 's-out' : 's-low';
-    return `<tr>
-      <td><b>${esc(r.itemName)}</b><br><span style="font-size:11px;color:var(--muted)">${esc(r.itemCode)}</span></td>
-      <td class="num">${fmtQty(r.systemQty)} ${esc(r.unit)}</td>
-      <td class="num">${fmtQty(r.physicalQty)}</td>
-      <td class="num" style="color:${r.diff===0?'inherit':(r.diff<0?'var(--danger)':'var(--success)')}"><b>${r.diff>0?'+':''}${r.diff}</b></td>
-      <td class="num">${fmtMoney(r.valueDiff)}</td>
-      <td>${r.lastCount || 'Never'}</td>
-      <td><span class="badge-status ${cls}">${r.status}</span></td>
-      <td><button class="btn sec sm" onclick="recordReconciliation(${r.itemId})">Record Count</button></td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="8" class="empty">No items</td></tr>';
-  window.__reconciliation = rows;
-}
-function recordReconciliation(itemId){
-  const item = getItem(itemId);
-  const sys = getStock(itemId);
-  const phys = prompt(`Physical count for ${item?.name} (system = ${sys}):`);
-  if(phys === null || phys.trim() === '') return;
-  const physNum = Number(phys);
-  if(isNaN(physNum)){ toast('Invalid number','error'); return; }
-  const res = AuditorAPI.createReconciliation(authToken, {itemId, systemQty: sys, physicalQty: physNum});
-  if(!res.success){ toast(res.message,'error'); return; }
-  toast('Physical count recorded. Auditor note added to audit log.','success');
-  go('reconciliation');
-}
-function exportReconciliation(){
-  const rows = [['Item','Code','System Qty','Physical Qty','Difference','Value Difference','Status']];
-  (window.__reconciliation||[]).forEach(r => rows.push([r.itemName, r.itemCode, r.systemQty, r.physicalQty, r.diff, r.valueDiff, r.status]));
-  downloadCSV('stock_reconciliation', rows);
-}
-
-/* ========================================================================
-   AUDIT EXCEPTIONS
-   ======================================================================== */
-function renderExceptions(c){
-  const list = AuditorAPI.exceptions(authToken).data || [];
-  const crit = list.filter(e=>e.severity==='critical');
-  const warns = list.filter(e=>e.severity==='warn');
-  const infos = list.filter(e=>e.severity==='info');
-
-  c.innerHTML = `
-    <div class="readonly-banner">🚨 Auto-detected exceptions — see section descriptions below.</div>
-    <div class="cards">
-      <div class="card danger"><div class="label">Critical</div><div class="value">${crit.length}</div></div>
-      <div class="card warn"><div class="label">Warnings</div><div class="value">${warns.length}</div></div>
-      <div class="card info"><div class="label">Information</div><div class="value">${infos.length}</div></div>
-      <div class="card"><div class="label">Total Exceptions</div><div class="value">${list.length}</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>🚨 Exception List</h4></div>
-      <div class="panel-body">
-        ${list.length ? list.map(e => `
-          <div class="exc-card ${e.severity==='critical'?'':(e.severity==='warn'?'warn':'info')}">
-            <div class="exc-title">${e.severity==='critical'?'🛑':(e.severity==='warn'?'⚠️':'ℹ️')} ${esc(e.title)}${e.txn?` <span class="pill">${esc(e.txn)}</span>`:''}</div>
-            <div class="exc-body">${esc(e.detail)}</div>
-          </div>
-        `).join('') : '<div class="empty">✅ No exceptions detected. System integrity is clean.</div>'}
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>📖 Exception Types</h4></div>
-      <div class="panel-body" style="font-size:12.5px;color:#475569;line-height:1.7">
-        The following exception types are automatically detected:<br>
-        <b>Self Approval</b> — requester and approver are the same user (serious).<br>
-        <b>Large Adjustment</b> — adjustment ≥ 100 units.<br>
-        <b>Repeated Rejection</b> — a requester with ≥ 2 rejected transactions.<br>
-        <b>Approval Delay</b> — pending beyond SLA (${db.settings.slaHours}h).<br>
-        <b>Negative Stock Attempt</b> — Stock OUT approved beyond available quantity.<br>
-        <b>Stock Discrepancy</b> — adjustment of ≥ 10 units (system vs physical).<br>
-        <b>Excessive Reversals</b> — 3+ reversed transactions in the system.
-      </div>
-    </div>
-  `;
-}
-
-/* ========================================================================
-   INVENTORY ANALYSIS
-   ======================================================================== */
-function renderAnalysis(c){
-  // Value by category
-  const catVals = {};
-  db.items.forEach(i => {
-    const cat = getCategory(i.categoryId);
-    const name = cat?.name || 'Uncategorized';
-    catVals[name] = (catVals[name]||0) + getStock(i.id)*(i.unitCost||0);
-  });
-
-  // Stock by status
-  const statuses = {Normal:0, 'Low Stock':0, Critical:0, 'Out of Stock':0};
-  db.items.forEach(i => {
-    const s = getStock(i.id);
-    if(s<=0) statuses['Out of Stock']++;
-    else if(s <= i.minStock) statuses.Critical++;
-    else if(s <= i.reorderLevel) statuses['Low Stock']++;
-    else statuses.Normal++;
-  });
-
-  // Fast/slow
-  const now = new Date();
-  const fastStats = {};
-  db.transactions.filter(t => t.type === 'STOCK_OUT' && t.status === 'Approved').forEach(t => {
-    t.items.forEach(l => { fastStats[l.itemId] = (fastStats[l.itemId]||0) + l.qty; });
-  });
-  const fast = Object.entries(fastStats).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
-  const slow = db.items.map(i => {
-    const outs = db.transactions.filter(t => t.type === 'STOCK_OUT' && t.status === 'Approved' && t.items.some(l => l.itemId === i.id));
-    const lastOut = outs.length ? outs.map(t=>t.date).sort().pop() : null;
-    const days = lastOut ? Math.floor((now - new Date(lastOut))/86400000) : 99999;
-    return {item:i, days, stock:getStock(i.id)};
-  }).filter(r => r.stock > 0).sort((a,b)=>b.days-a.days).slice(0,5);
-
-  // Turnover
-  const since = new Date(); since.setDate(since.getDate()-365);
-  const outValue = db.transactions
-    .filter(t => t.type === 'STOCK_OUT' && t.status === 'Approved' && new Date(t.date) >= since)
-    .reduce((s,t) => s + t.items.reduce((a,l)=>a+l.qty*(l.unitCost||0),0), 0);
-  const invValue = Object.values(catVals).reduce((s,v)=>s+v,0);
-  const turnover = invValue > 0 ? outValue/invValue : 0;
-  const daysOfInventory = turnover > 0 ? Math.round(365/turnover) : 0;
-
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 READ-ONLY — Analysis based on approved transactions only.</div>
-
-    <div class="cards">
-      <div class="card success"><div class="label">Total Inventory Value</div><div class="value" style="font-size:18px">${fmtMoney(invValue)}</div></div>
-      <div class="card info"><div class="label">Turnover (1Y)</div><div class="value">${turnover.toFixed(2)}</div></div>
-      <div class="card info"><div class="label">Days of Inventory</div><div class="value">${daysOfInventory}</div></div>
-      <div class="card"><div class="label">Active Items</div><div class="value">${db.items.length}</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>📊 Inventory Value by Category</h4></div>
-      <div class="panel-body"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>📈 Stock Status Distribution</h4></div>
-      <div class="panel-body">
-        ${Object.entries(statuses).map(([k,v])=>`<div class="stat-row"><span>${k}</span><b>${v}</b></div>`).join('')}
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>⚡ Top 5 Fast-Moving Items</h4></div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Rank</th><th>Item</th><th class="num">Total Issued</th><th class="num">Current Stock</th></tr></thead>
-            <tbody>
-              ${fast.map(([itemId, qty], idx) => {
-                const item = getItem(+itemId);
-                return `<tr><td>#${idx+1}</td><td>${esc(item?.name||'-')}</td><td class="num">${fmtQty(qty)} ${esc(item?.unit||'')}</td><td class="num">${fmtQty(getStock(+itemId))}</td></tr>`;
-              }).join('') || '<tr><td colspan="4" class="empty">No OUT transactions</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h4>🐢 Top 5 Slow-Moving Items</h4></div>
-      <div class="panel-body p0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Item</th><th class="num">Current Stock</th><th class="num">Days Without OUT</th><th class="num">Stock Value</th></tr></thead>
-            <tbody>
-              ${slow.map(r => `
-                <tr>
-                  <td>${esc(r.item.name)}</td>
-                  <td class="num">${fmtQty(r.stock)}</td>
-                  <td class="num">${r.days===99999?'Never':r.days}</td>
-                  <td class="num">${fmtMoney(r.stock*r.item.unitCost)}</td>
-                </tr>`).join('') || '<tr><td colspan="4" class="empty">No data</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  setTimeout(() => {
-    const ctx = document.getElementById('catChart');
-    if(!ctx) return;
-    new Chart(ctx, {
-      type:'doughnut',
-      data:{
-        labels: Object.keys(catVals),
-        datasets:[{data:Object.values(catVals), backgroundColor:['#1e40af','#0284c7','#f59e0b','#dc2626','#7c3aed','#16a34a']}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'}}}
-    });
-  }, 30);
-}
-
-/* ========================================================================
-   AUDIT REPORTS
-   ======================================================================== */
-function renderReports(c){
-  const reports = [
-    {id:'transactions', title:'Complete Transaction Report', icon:'📋'},
-    {id:'stock_in', title:'Stock IN Audit Report', icon:'📥'},
-    {id:'stock_out', title:'Stock OUT Audit Report', icon:'📤'},
-    {id:'adjustments', title:'Adjustment Audit Report', icon:'⚖️'},
-    {id:'approvals', title:'Approval History Report', icon:'✅'},
-    {id:'rejections', title:'Rejection Report', icon:'❌'},
-    {id:'reversals', title:'Reversal Report', icon:'↩️'},
-    {id:'discrepancies', title:'Stock Discrepancy Report', icon:'📉'},
-    {id:'user_activity', title:'User Activity Report', icon:'👤'},
-    {id:'exceptions', title:'Audit Exception Report', icon:'🚨'},
-    {id:'valuation', title:'Inventory Valuation Audit', icon:'💰'},
-  ];
-  c.innerHTML = `
-    <div class="readonly-banner">🔒 All reports are read-only. Exports include company header and generation metadata.</div>
-    <div class="panel">
-      <div class="panel-head"><h4>📄 Audit Reports</h4></div>
-      <div class="panel-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
-          ${reports.map(r => `
-            <button class="btn sec" style="justify-content:flex-start;padding:14px" onclick="runAuditReport('${r.id}')">
-              <span style="font-size:18px">${r.icon}</span> ${r.title}
-            </button>`).join('')}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function runAuditReport(id){
-  const titles = {
-    transactions:'Complete Transaction Report',
-    stock_in:'Stock IN Audit Report', stock_out:'Stock OUT Audit Report',
-    adjustments:'Adjustment Audit Report', approvals:'Approval History Report',
-    rejections:'Rejection Report', reversals:'Reversal Report',
-    discrepancies:'Stock Discrepancy Report', user_activity:'User Activity Report',
-    exceptions:'Audit Exception Report', valuation:'Inventory Valuation Audit',
-  };
-  let rows = []; // array of arrays
-
-  if(id === 'transactions'){
-    rows = [['Date','Number','Type','Status','Requester','Approver','Items','Qty','Value']];
-    db.transactions.forEach(t => {
-      rows.push([t.date, t.number, t.type, t.status, getUser(t.requestedBy)?.name||'-',
-        t.approvedBy ? getUser(t.approvedBy)?.name : '-',
-        t.items.length, t.items.reduce((s,l)=>s+l.qty,0),
-        t.items.reduce((s,l)=>s+l.qty*(l.unitCost||0),0).toFixed(2)]);
-    });
-  } else if(id === 'stock_in' || id === 'stock_out'){
-    const type = id === 'stock_in' ? 'STOCK_IN' : 'STOCK_OUT';
-    rows = [['Date','Number','Party','Item','Qty','Unit Cost','Total','Status','Requester','Approver']];
-    db.transactions.filter(t => t.type === type).forEach(t => {
-      const party = t.supplierId ? getSupplier(t.supplierId)?.name : (getDepartment(t.departmentId)?.name||t.recipient||'-');
-      t.items.forEach(l => {
-        rows.push([t.date, t.number, party, getItem(l.itemId)?.name||'-', l.qty, l.unitCost, (l.qty*l.unitCost).toFixed(2), t.status, getUser(t.requestedBy)?.name||'-', t.approvedBy?getUser(t.approvedBy)?.name:'-']);
-      });
-    });
-  } else if(id === 'adjustments'){
-    rows = [['Date','Number','Item','System','Physical','Difference','Reason','Status','Requester','Approver']];
-    db.transactions.filter(t => t.type.startsWith('ADJUSTMENT')).forEach(t => {
-      rows.push([t.date, t.number, getItem(t.items[0]?.itemId)?.name||'-', t.adjSystem, t.adjPhysical, t.adjDiff, t.reason||'-', t.status, getUser(t.requestedBy)?.name||'-', t.approvedBy?getUser(t.approvedBy)?.name:'-']);
-    });
-  } else if(id === 'approvals'){
-    rows = [['Date','Transaction','Type','Requester','Approver','Decision','Comment']];
-    db.transactions.forEach(t => {
-      (t.approvalHistory||[]).forEach(h => {
-        const u = db.users.find(x=>x.id===h.userId);
-        if(u && ['super_admin','warehouse_manager'].includes(u.role) && ['Approved','Rejected','Returned','Returned for Correction','Reversed'].includes(h.action)){
-          rows.push([fmtDateTime(h.date), t.number, t.type, getUser(t.requestedBy)?.name||'-', h.userName, h.action, h.comment||'']);
-        }
-      });
-    });
-  } else if(id === 'rejections'){
-    rows = [['Date','Number','Type','Requester','Rejected By','Reason']];
-    db.transactions.filter(t=>t.status==='Rejected').forEach(t => {
-      rows.push([t.date, t.number, t.type, getUser(t.requestedBy)?.name||'-', getUser(t.rejectedBy)?.name||'-', t.rejectionReason||'']);
-    });
-  } else if(id === 'reversals'){
-    rows = [['Date','Number','Type','Original Amount','Reversed By','Reason']];
-    db.transactions.filter(t=>t.status==='Reversed').forEach(t => {
-      rows.push([t.date, t.number, t.type, t.items.reduce((s,l)=>s+l.qty,0), getUser(t.reversedBy)?.name||'-', t.reversalReason||'']);
-    });
-  } else if(id === 'discrepancies'){
-    rows = [['Item','Code','System Qty','Physical Qty','Difference','Value Difference','Status']];
-    buildReconciliation().forEach(r => rows.push([r.itemName, r.itemCode, r.systemQty, r.physicalQty, r.diff, r.valueDiff, r.status]));
-  } else if(id === 'user_activity'){
-    rows = [['User','Role','Action','Date','Transaction','Note']];
-    (db.auditLogs||[]).forEach(l => {
-      rows.push([l.userName, getUser(l.userId)?.role||'-', l.action, fmtDateTime(l.timestamp), l.txnNumber||'-', l.note||'']);
-    });
-  } else if(id === 'exceptions'){
-    rows = [['Severity','Type','Transaction','Detail']];
-    detectExceptions().forEach(e => rows.push([e.severity, e.title, e.txn||'-', e.detail]));
-  } else if(id === 'valuation'){
-    rows = [['Code','Item','Category','Qty','Unit Cost','Total Value']];
-    db.items.forEach(i => {
-      const q = getStock(i.id);
-      if(q <= 0) return;
-      rows.push([i.code, i.name, getCategory(i.categoryId)?.name||'-', q, i.unitCost, (q*i.unitCost).toFixed(2)]);
-    });
-    rows.push(['','','','','TOTAL', db.items.reduce((s,i)=>s+getStock(i.id)*i.unitCost,0).toFixed(2)]);
-  }
-
-  const html = `
-    <div class="modal-head"><h4>${titles[id]}</h4><button class="x-btn" onclick="closeModal()">×</button></div>
-    <div class="modal-body">
-      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:14px;font-size:12.5px">
-        <b>${esc(db.settings.company)}</b> · ${esc(db.settings.address||'')}<br>
-        Report: <b>${titles[id]}</b><br>
-        Generated: ${new Date().toLocaleString('en-GB')} · By: ${esc(currentUser.name)} (Auditor)
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>${(rows[0]||[]).map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
-          <tbody>
-            ${rows.slice(1).map(r => `<tr>${r.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('') || '<tr><td colspan="'+(rows[0]?.length||1)+'" class="empty">No data</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn sec" onclick="downloadCSV('${id}_audit', ${JSON.stringify(rows).replace(/'/g,"\\'")})">⬇ CSV / Excel</button>
-      <button class="btn sec" onclick="window.print()">🖨 PDF / Print</button>
-      <button class="btn sec" onclick="closeModal()">Close</button>
-    </div>`;
-  openModal(html);
-}
-
-/* ========================================================================
-   TRANSACTION DETAIL MODAL (READ-ONLY)
-   ======================================================================== */
-function openAuditorTransaction(id){
-  const res = AuditorAPI.getTransaction(authToken, id);
-  if(!res.success){ toast(res.message,'error'); return; }
-  const t = res.data;
-
-  openModal(`
-    <div class="modal-head"><h4>${typePill(t.type)} ${esc(t.number)} ${statusPill(t.status)}</h4><button class="x-btn" onclick="closeModal()">×</button></div>
-    <div class="modal-body">
-      <div class="readonly-banner">🔒 READ-ONLY — Auditor cannot modify this transaction.</div>
-
-      <div class="panel">
-        <div class="panel-head"><h4>Transaction Information</h4></div>
-        <div class="panel-body">
-          <div class="stat-row"><span>Transaction ID</span><b>${esc(t.id)}</b></div>
-          <div class="stat-row"><span>Transaction Number</span><b>${esc(t.number)}</b></div>
-          <div class="stat-row"><span>Type</span><b>${esc(t.type)}</b></div>
-          <div class="stat-row"><span>Created</span><b>${fmtDateTime(t.createdAt)}</b></div>
-          <div class="stat-row"><span>Submitted</span><b>${fmtDateTime(t.submittedAt)}</b></div>
-          <div class="stat-row"><span>Status</span><b>${esc(t.status)}</b></div>
-          <div class="stat-row"><span>Date (document)</span><b>${fmtDate(t.date)}</b></div>
-          ${t.reference?`<div class="stat-row"><span>Reference</span><b>${esc(t.reference)}</b></div>`:''}
-          ${t.invoice?`<div class="stat-row"><span>Invoice / Delivery</span><b>${esc(t.invoice)}</b></div>`:''}
-          ${t.supplier?`<div class="stat-row"><span>Supplier</span><b>${esc(t.supplier)}</b></div>`:''}
-          ${t.department?`<div class="stat-row"><span>Department</span><b>${esc(t.department)}</b></div>`:''}
-          ${t.recipient?`<div class="stat-row"><span>Recipient</span><b>${esc(t.recipient)}</b></div>`:''}
-          ${t.purpose?`<div class="stat-row"><span>Purpose</span><b>${esc(t.purpose)}</b></div>`:''}
-          ${t.reason?`<div class="stat-row"><span>Reason</span><b>${esc(t.reason)}</b></div>`:''}
-          ${t.notes?`<div class="stat-row"><span>Notes</span><b>${esc(t.notes)}</b></div>`:''}
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head"><h4>Users</h4></div>
-        <div class="panel-body">
-          <div class="stat-row"><span>Requester</span><b>${esc(t.requestedBy.name)} (${esc(t.requestedBy.role)})</b></div>
-          ${t.approver?`<div class="stat-row"><span>Approver</span><b>${esc(t.approver.name)} (${esc(t.approver.role)}) · ${fmtDateTime(t.approver.date)}</b></div>
-          ${t.approver.comment?`<div class="stat-row"><span>Approval Comment</span><b>${esc(t.approver.comment)}</b></div>`:''}`:''}
-          ${t.rejector?`<div class="stat-row" style="color:var(--danger)"><span>Rejected By</span><b>${esc(t.rejector.name)} · ${fmtDateTime(t.rejector.date)}</b></div>
-          ${t.rejector.reason?`<div class="stat-row"><span>Rejection Reason</span><b>${esc(t.rejector.reason)}</b></div>`:''}`:''}
-          ${t.returner?`<div class="stat-row"><span>Returned By</span><b>${esc(t.returner.name)} · ${fmtDateTime(t.returner.date)}</b></div>
-          ${t.returner.comment?`<div class="stat-row"><span>Correction Comment</span><b>${esc(t.returner.comment)}</b></div>`:''}`:''}
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head"><h4>Items & Inventory Impact</h4></div>
-        <div class="panel-body p0">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Item</th><th>Location</th><th class="num">Stock Before</th><th class="num">Requested</th><th class="num">New Stock</th><th class="num">Unit Cost</th><th class="num">Total</th></tr></thead>
-              <tbody>
-                ${t.items.map(i => `
-                  <tr>
-                    <td><b>${esc(i.name)}</b><br><span style="font-size:11px;color:var(--muted)">${esc(i.code)}</span></td>
-                    <td style="font-size:11.5px">${esc(i.location)}</td>
-                    <td class="num">${fmtQty(i.previousStock)} ${esc(i.unit)}</td>
-                    <td class="num"><b>${fmtQty(i.qty)}</b></td>
-                    <td class="num"><b>${fmtQty(i.newStock)}</b></td>
-                    <td class="num">${fmt(i.unitCost)}</td>
-                    <td class="num">${fmt(i.total)}</td>
-                  </tr>`).join('')}
-                <tr><td colspan="6" style="text-align:right"><b>Total</b></td><td class="num"><b>${fmt(t.totalValue)}</b></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      ${t.type.startsWith('ADJUSTMENT') ? `
-        <div class="panel">
-          <div class="panel-head"><h4>Adjustment Values</h4></div>
-          <div class="panel-body">
-            <div class="stat-row"><span>System Quantity</span><b>${t.items[0].adjSystem}</b></div>
-            <div class="stat-row"><span>Physical Quantity</span><b>${t.items[0].adjPhysical}</b></div>
-            <div class="stat-row"><span>Difference</span><b style="color:${t.items[0].adjDiff<0?'var(--danger)':'var(--success)'}">${t.items[0].adjDiff>0?'+':''}${t.items[0].adjDiff}</b></div>
-          </div>
-        </div>`:''}
-
-      <div class="panel">
-        <div class="panel-head"><h4>Complete Approval History</h4></div>
-        <div class="panel-body">
-          ${t.approvalHistory.length ? t.approvalHistory.map((h, i) => `
-            <div style="padding:9px 0;border-bottom:1px dashed var(--border);font-size:12.5px">
-              <b>#${i+1} ${esc(h.userName)}</b> · ${esc(h.action)} · <span style="color:var(--muted)">${fmtDateTime(h.date)}</span>
-              ${h.comment?`<div style="color:var(--muted);font-size:12px;margin-top:2px">${esc(h.comment)}</div>`:''}
-            </div>`).join('') : '<div class="empty">No history</div>'}
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn sec" onclick="closeModal()">Close</button>
-    </div>
-  `);
-}
-
-/* ========================================================================
-   HELPERS
-   ======================================================================== */
-function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function fmt(n){ return (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtQty(n){ return (Number(n)||0).toLocaleString('en-US'); }
-function fmtMoney(n){ return `${db.settings.currency} ${fmt(n)}`; }
-function fmtDate(d){ if(!d) return '-'; const dt = new Date(d); return isNaN(dt)?d:dt.toISOString().slice(0,10); }
-function fmtDateTime(d){ if(!d) return '-'; const dt = new Date(d); return isNaN(dt)?d:dt.toLocaleString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 function typePill(type){
   const map = {
     STOCK_IN:['📥','In','#dcfce7','#166534'],
@@ -1505,48 +212,429 @@ function typePill(type){
     ADJUSTMENT_OUT:['⚖️','Adj-','#fef3c7','#92400e'],
     OPENING:['🏁','Opening','#e0e7ff','#3730a3'],
   };
-  const [icon,label,bg,color] = map[type] || ['•',type,'#e2e8f0','#475569'];
-  return `<span class="pill" style="background:${bg};color:${color}">${icon} ${label}</span>`;
+  const [i,l,bg,c] = map[type] || ['•',type,'#e2e8f0','#475569'];
+  return `<span class="pill" style="background:${bg};color:${c}">${i} ${l}</span>`;
 }
-function statusPill(status){
-  const map = {'Draft':'s-draft','Pending Approval':'s-pending','Submitted':'s-pending','Approved':'s-approved','Rejected':'s-rejected','Needs Correction':'s-correction','Reversed':'s-reversed','Cancelled':'s-rejected'};
-  return `<span class="badge-status ${map[status]||'s-draft'}">${esc(status)}</span>`;
-}
-function decisionPill(dec){
-  const map = {'Approved':'s-approved','Rejected':'s-rejected','Returned for Correction':'s-correction','Returned':'s-correction','Reversed':'s-reversed'};
-  return `<span class="badge-status ${map[dec]||'s-draft'}">${esc(dec)}</span>`;
-}
-function toast(msg, type='success'){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show ' + type;
-  clearTimeout(t._tid);
-  t._tid = setTimeout(()=> t.classList.remove('show'), 2600);
-}
-function openModal(html){ document.getElementById('modal').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); }
-function closeModal(){ document.getElementById('modalOverlay').classList.remove('active'); }
-function downloadCSV(name, rows){
-  const csv = rows.map(r => r.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${name}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+function statusPill(s){
+  const map = { Draft:'s-draft', 'Pending Approval':'s-pending', Approved:'s-approved',
+    Rejected:'s-rejected', 'Needs Correction':'s-correction', Reversed:'s-reversed' };
+  return `<span class="badge-status ${map[s]||'s-draft'}">${esc(s)}</span>`;
 }
 
-/* ========================================================================
-   BOOT
-   ======================================================================== */
-(function boot(){
-  const saved = localStorage.getItem('wms_auditor_token');
-  if(saved){
-    const me = Auth.me(saved);
-    if(me.success){ authToken = saved; currentUser = me.data; enterApp(); return; }
-    localStorage.removeItem('wms_auditor_token');
+/* ============================================================================
+   AUTH
+   ============================================================================ */
+async function doLogin(){
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await Api.doLogin(username, password);
+    if (!res.success){
+      const d = document.getElementById('deniedMsg');
+      d.textContent = '❌ ' + (res.message || 'Login failed');
+      d.style.display = 'block';
+      return;
+    }
+    if (!['auditor','super_admin'].includes(res.user.role)){
+      const d = document.getElementById('deniedMsg');
+      d.textContent = '❌ This portal is restricted to Auditors.';
+      d.style.display = 'block';
+      return;
+    }
+    Api.login(res.token, res.user);
+    db.user = res.user;
+    enterApp();
+  } catch(e){ toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+async function logout(){
+  try { await fetch('/api/auth/logout',{method:'POST',headers:{Authorization:`Bearer ${Api.token}`}}); } catch(e){}
+  Api.logout();
+}
+
+/* ============================================================================
+   NAV
+   ============================================================================ */
+const NAV_ITEMS = [
+  { section:'AUDITOR' },
+  { page:'dashboard', label:'Auditor Dashboard', icon:'📊' },
+  { section:'REVIEW' },
+  { page:'transactions', label:'All Transactions', icon:'📋' },
+  { page:'auditlog', label:'Audit Log', icon:'🔒' },
+  { section:'CONTROL' },
+  { page:'reconciliation', label:'Stock Reconciliation', icon:'⚖️' },
+  { page:'exceptions', label:'Audit Exceptions', icon:'🚨' },
+];
+
+function buildNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  NAV_ITEMS.forEach(item => {
+    if (item.section){
+      const s = document.createElement('div');
+      s.className = 'section'; s.textContent = item.section;
+      nav.appendChild(s); return;
+    }
+    const a = document.createElement('a');
+    a.dataset.page = item.page;
+    a.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
+    a.onclick = () => go(item.page);
+    nav.appendChild(a);
+  });
+}
+
+function go(page){
+  currentPage = page;
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  const titles = { dashboard:'Auditor Dashboard', transactions:'All Transactions',
+    auditlog:'Audit Log', reconciliation:'Stock Reconciliation', exceptions:'Audit Exceptions' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  const c = document.getElementById('content');
+  if (page === 'dashboard')        renderDashboard(c);
+  else if (page === 'transactions') renderTransactions(c);
+  else if (page === 'auditlog')     renderAuditLog(c);
+  else if (page === 'reconciliation') renderReconciliation(c);
+  else if (page === 'exceptions')   renderExceptions(c);
+}
+
+async function enterApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = db.user.name;
+  document.getElementById('userRole').textContent = db.user.role === 'super_admin' ? 'Super Admin (Audit)' : 'Auditor';
+  document.getElementById('userAvatar').textContent = db.user.name.charAt(0).toUpperCase();
+  buildNav();
+  await refreshData();
+  go('dashboard');
+}
+
+async function refreshData(){
+  const [txns, stock, items] = await Promise.all([
+    Api.transactions(), Api.stock(), Api.items(),
+  ]);
+  db.transactions = txns.data || [];
+  db.stock = stock.data || [];
+  db.items = items.data || [];
+}
+
+/* ============================================================================
+   DASHBOARD
+   ============================================================================ */
+async function renderDashboard(c){
+  const t = db.transactions;
+  const byType = { STOCK_IN:0, STOCK_OUT:0, ADJUSTMENT:0 };
+  const byStatus = { Approved:0, Rejected:0, Reversed:0, 'Pending Approval':0, 'Needs Correction':0 };
+  t.forEach(x => {
+    const cat = x.type.startsWith('ADJUSTMENT') ? 'ADJUSTMENT' : x.type;
+    byType[cat] = (byType[cat] || 0) + 1;
+    byStatus[x.status] = (byStatus[x.status] || 0) + 1;
+  });
+
+  // Auto-detect exceptions
+  const selfApproved = t.filter(x => x.approved_by === x.requested_by).length;
+  const largeAdj = t.filter(x => x.type.startsWith('ADJUSTMENT') && Number(x.total_qty||0) >= 100).length;
+  const overdue = t.filter(x => x.status === 'Pending Approval' &&
+    x.submitted_at && (Date.now() - new Date(x.submitted_at)) > 24*3600*1000).length;
+  const discrepancies = db.stock.filter(r =>
+    Number(r.current_stock) > 0 && Number(r.current_stock) <= Number(r.reorder_level) / 2
+  ).length;
+
+  c.innerHTML = `
+    <div class="readonly-banner">🔒 READ-ONLY — The auditor cannot approve, reject, edit or delete anything.</div>
+    <div class="cards">
+      <div class="card"><div class="label">Total Transactions</div><div class="value">${t.length}</div></div>
+      <div class="card info"><div class="label">Stock IN</div><div class="value">${byType.STOCK_IN}</div></div>
+      <div class="card info"><div class="label">Stock OUT</div><div class="value">${byType.STOCK_OUT}</div></div>
+      <div class="card info"><div class="label">Adjustments</div><div class="value">${byType.ADJUSTMENT}</div></div>
+      <div class="card success"><div class="label">Approved</div><div class="value">${byStatus.Approved}</div></div>
+      <div class="card danger"><div class="label">Rejected</div><div class="value">${byStatus.Rejected}</div></div>
+      <div class="card warn"><div class="label">Reversed</div><div class="value">${byStatus.Reversed}</div></div>
+      <div class="card warn"><div class="label">Pending</div><div class="value">${byStatus['Pending Approval']}</div></div>
+      <div class="card ${selfApproved+largeAdj+overdue>0?'danger':'success'}">
+        <div class="label">Audit Exceptions</div><div class="value">${selfApproved + largeAdj + overdue}</div></div>
+      <div class="card ${discrepancies>0?'warn':'success'}">
+        <div class="label">Low-Stock Alerts</div><div class="value">${discrepancies}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h4>📈 Transaction Summary</h4></div>
+      <div class="panel-body">
+        <div class="stat-row"><span>Stock IN transactions</span><b>${byType.STOCK_IN}</b></div>
+        <div class="stat-row"><span>Stock OUT transactions</span><b>${byType.STOCK_OUT}</b></div>
+        <div class="stat-row"><span>Adjustment transactions</span><b>${byType.ADJUSTMENT}</b></div>
+        <div class="stat-row"><span>Approved</span><b>${byStatus.Approved}</b></div>
+        <div class="stat-row"><span>Rejected</span><b>${byStatus.Rejected}</b></div>
+        <div class="stat-row"><span>Reversed</span><b>${byStatus.Reversed}</b></div>
+        <div class="stat-row"><span>Pending Approval</span><b>${byStatus['Pending Approval']}</b></div>
+      </div>
+    </div>`;
+}
+
+/* ============================================================================
+   TRANSACTIONS
+   ============================================================================ */
+function renderTransactions(c){
+  c.innerHTML = `
+    <div class="readonly-banner">🔒 READ-ONLY — You can inspect transactions but cannot modify them.</div>
+    <div class="panel">
+      <div class="panel-head"><h4>📋 All Transactions</h4></div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Number</th><th>Type</th><th>Requested By</th><th>Approved By</th>
+              <th class="num">Qty</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              ${db.transactions.length ? db.transactions.map(t => `
+                <tr>
+                  <td>${fmtDate(t.date)}</td>
+                  <td><b>${esc(t.number)}</b></td>
+                  <td>${typePill(t.type)}</td>
+                  <td>${esc(t.requester_name)}</td>
+                  <td>${esc(t.approver_name || '-')}</td>
+                  <td class="num">${fmtQty(t.total_qty||0)}</td>
+                  <td>${statusPill(t.status)}</td>
+                  <td><button class="btn sec sm" onclick="viewTransaction('${t.id}')">View</button></td>
+                </tr>`).join('') : '<tr><td colspan="8" class="empty">No transactions</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function viewTransaction(id){
+  const r = await Api.transaction(id);
+  if (!r.success){ toast(r.message, 'error'); return; }
+  const t = r.data;
+
+  openModal(`
+    <div class="modal-head">
+      <h4>${typePill(t.type)} ${esc(t.number)} ${statusPill(t.status)}</h4>
+      <button class="x-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="readonly-banner">🔒 Read-only</div>
+      <div class="panel">
+        <div class="panel-head"><h4>Transaction Info</h4></div>
+        <div class="panel-body">
+          <div class="stat-row"><span>Date</span><b>${fmtDate(t.date)}</b></div>
+          <div class="stat-row"><span>Requested By</span><b>${esc(t.requested_by_user?.name||'-')}</b></div>
+          ${t.approved_by_user ? `<div class="stat-row"><span>Approved By</span><b>${esc(t.approved_by_user.name)} · ${fmtDateTime(t.approved_at)}</b></div>`:''}
+          ${t.rejected_by_user ? `<div class="stat-row" style="color:var(--danger)"><span>Rejected By</span><b>${esc(t.rejected_by_user.name)} · ${fmtDateTime(t.rejected_at)}</b></div>`:''}
+          ${t.rejection_reason ? `<div class="stat-row"><span>Rejection Reason</span><b>${esc(t.rejection_reason)}</b></div>`:''}
+          ${t.approval_comment ? `<div class="stat-row"><span>Approval Comment</span><b>${esc(t.approval_comment)}</b></div>`:''}
+          ${t.reference ? `<div class="stat-row"><span>Reference</span><b>${esc(t.reference)}</b></div>`:''}
+          ${t.notes ? `<div class="stat-row"><span>Notes</span><b>${esc(t.notes)}</b></div>`:''}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h4>Items</h4></div>
+        <div class="panel-body" style="padding:0">
+          <table style="min-width:auto">
+            <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit Cost</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              ${(t.items||[]).map(l => `
+                <tr>
+                  <td>${esc(l.name||'-')}<br><span style="font-size:11px;color:var(--muted)">${esc(l.code||'')}</span></td>
+                  <td class="num">${fmtQty(l.qty)}</td>
+                  <td class="num">${fmt(l.unit_cost)}</td>
+                  <td class="num">${fmt(l.qty*l.unit_cost)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h4>Complete Approval History</h4></div>
+        <div class="panel-body">
+          ${(t.approval_history||[]).map((h,i) => `
+            <div style="padding:9px 0;border-bottom:1px dashed var(--border);font-size:12.5px">
+              <b>#${i+1} ${esc(h.user_name)}</b> · ${esc(h.action)} · <span style="color:var(--muted)">${fmtDateTime(h.created_at)}</span>
+              ${h.comment ? `<div style="color:var(--muted);font-size:12px;margin-top:2px">${esc(h.comment)}</div>`:''}
+            </div>`).join('') || '<div class="empty">No history</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal()">Close</button>
+    </div>`);
+}
+
+/* ============================================================================
+   AUDIT LOG
+   ============================================================================ */
+async function renderAuditLog(c){
+  c.innerHTML = '<div class="empty">⏳ Loading…</div>';
+  const r = await Api.auditLogs();
+  const rows = r.data || [];
+  c.innerHTML = `
+    <div class="readonly-banner">🔒 APPEND-ONLY — Audit records cannot be edited or deleted.</div>
+    <div class="panel">
+      <div class="panel-head"><h4>🔒 Audit Log (${rows.length})</h4></div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Txn</th><th>Item</th><th>Old</th><th>New</th><th>Note</th></tr></thead>
+            <tbody>
+              ${rows.length ? rows.slice(0,300).map(l => `
+                <tr>
+                  <td>${fmtDateTime(l.created_at)}</td>
+                  <td><b>${esc(l.user_name)}</b></td>
+                  <td>${esc(l.action)}</td>
+                  <td>${esc(l.txn_number||'-')}</td>
+                  <td>${esc(l.item_name||'-')}</td>
+                  <td>${esc(l.old_value||'-')}</td>
+                  <td>${esc(l.new_value||'-')}</td>
+                  <td style="color:var(--muted);font-size:12px">${esc(l.note||'')}</td>
+                </tr>`).join('') : '<tr><td colspan="8" class="empty">No audit logs</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================================================================
+   RECONCILIATION (READ-ONLY comparison of current stock)
+   ============================================================================ */
+function renderReconciliation(c){
+  const rows = db.stock.map(r => {
+    const sys = Number(r.current_stock);
+    return {
+      code: r.code, name: r.item_name, unit: r.unit,
+      system: sys,
+      min: Number(r.min_stock),
+      reorder: Number(r.reorder_level),
+      value: sys * Number(r.unit_cost),
+      status: sys <= 0 ? 'OUT'
+        : sys <= Number(r.min_stock) ? 'CRITICAL'
+        : sys <= Number(r.reorder_level) ? 'LOW'
+        : 'NORMAL',
+    };
+  });
+
+  const matches = rows.filter(r => r.status === 'NORMAL').length;
+  const diffs = rows.length - matches;
+
+  c.innerHTML = `
+    <div class="readonly-banner">🔒 Reconciliation is a read-only comparison against system stock.</div>
+    <div class="cards">
+      <div class="card success"><div class="label">Normal Stock</div><div class="value">${matches}</div></div>
+      <div class="card warn"><div class="label">Low / Critical</div><div class="value">${rows.filter(r=>r.status==='LOW'||r.status==='CRITICAL').length}</div></div>
+      <div class="card danger"><div class="label">Out of Stock</div><div class="value">${rows.filter(r=>r.status==='OUT').length}</div></div>
+      <div class="card info"><div class="label">Total SKUs</div><div class="value">${rows.length}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h4>⚖️ System vs Thresholds</h4></div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Item</th><th class="num">System Qty</th><th class="num">Min</th><th class="num">Reorder</th><th class="num">Value</th><th>Status</th></tr></thead>
+            <tbody>
+              ${rows.map(r => {
+                const cls = { NORMAL:'s-approved', LOW:'s-pending', CRITICAL:'s-rejected', OUT:'s-rejected' }[r.status];
+                return `<tr>
+                  <td><b>${esc(r.code)}</b></td>
+                  <td>${esc(r.name)}</td>
+                  <td class="num">${fmtQty(r.system)} ${esc(r.unit)}</td>
+                  <td class="num">${fmtQty(r.min)}</td>
+                  <td class="num">${fmtQty(r.reorder)}</td>
+                  <td class="num">${fmt(r.value)}</td>
+                  <td><span class="badge-status ${cls}">${r.status}</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================================================================
+   EXCEPTIONS
+   ============================================================================ */
+function renderExceptions(c){
+  const exceptions = [];
+
+  // 1. Self-approval
+  db.transactions.filter(t => t.approved_by && t.approved_by === t.requested_by).forEach(t => {
+    exceptions.push({ severity:'critical', title:'Self-Approval', txn:t.number,
+      detail:`Transaction ${t.number} was approved by the same user who created it.` });
+  });
+
+  // 2. Large adjustments
+  db.transactions.filter(t => t.type.startsWith('ADJUSTMENT') && Number(t.total_qty||0) >= 100).forEach(t => {
+    exceptions.push({ severity:'warn', title:'Large Adjustment', txn:t.number,
+      detail:`Adjustment of ${t.total_qty} units exceeds 100-unit threshold.` });
+  });
+
+  // 3. Approval delays
+  db.transactions.filter(t => t.status === 'Pending Approval' && t.submitted_at &&
+    (Date.now() - new Date(t.submitted_at)) > 24*3600*1000).forEach(t => {
+    const hrs = Math.floor((Date.now() - new Date(t.submitted_at)) / 3600000);
+    exceptions.push({ severity:'warn', title:'Approval Delay', txn:t.number,
+      detail:`Pending for ${hrs}h (SLA: 24h).` });
+  });
+
+  // 4. Repeated rejections
+  const rejectionsBy = {};
+  db.transactions.filter(t => t.status === 'Rejected').forEach(t => {
+    rejectionsBy[t.requested_by] = (rejectionsBy[t.requested_by]||0) + 1;
+  });
+  Object.entries(rejectionsBy).forEach(([uid, n]) => {
+    if (n >= 2){
+      const name = db.transactions.find(t => t.requested_by === uid)?.requester_name || uid;
+      exceptions.push({ severity:'warn', title:'Repeated Rejections',
+        detail:`${name} has ${n} rejected transactions.` });
+    }
+  });
+
+  // 5. Excessive reversals
+  const revCount = db.transactions.filter(t => t.status === 'Reversed').length;
+  if (revCount >= 3){
+    exceptions.push({ severity:'warn', title:'Excessive Reversals',
+      detail:`${revCount} transactions have been reversed.` });
   }
-  document.getElementById('loginScreen').style.display = 'flex';
+
+  const crit = exceptions.filter(e => e.severity === 'critical');
+  const warns = exceptions.filter(e => e.severity === 'warn');
+
+  c.innerHTML = `
+    <div class="readonly-banner">🚨 Auto-detected exceptions</div>
+    <div class="cards">
+      <div class="card danger"><div class="label">Critical</div><div class="value">${crit.length}</div></div>
+      <div class="card warn"><div class="label">Warnings</div><div class="value">${warns.length}</div></div>
+      <div class="card"><div class="label">Total</div><div class="value">${exceptions.length}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h4>🚨 Exceptions</h4></div>
+      <div class="panel-body">
+        ${exceptions.length ? exceptions.map(e => `
+          <div style="border-left:4px solid ${e.severity==='critical'?'var(--danger)':'var(--warn)'};
+                     background:${e.severity==='critical'?'#fef2f2':'#fffbeb'};
+                     padding:12px 14px;border-radius:8px;margin-bottom:10px">
+            <div style="font-weight:700;font-size:13.5px">${e.severity==='critical'?'🛑':'⚠️'} ${esc(e.title)}
+              ${e.txn?`<span class="pill">${esc(e.txn)}</span>`:''}</div>
+            <div style="font-size:12.5px;color:#475569;margin-top:4px">${esc(e.detail)}</div>
+          </div>`).join('') : '<div class="empty">✅ No exceptions detected.</div>'}
+      </div>
+    </div>`;
+}
+
+/* ============================================================================
+   BOOT
+   ============================================================================ */
+(function boot(){
+  if (Api.isLoggedIn()){
+    db.user = Api.user;
+    if (!['auditor','super_admin'].includes(db.user.role)){ Api.logout(); return; }
+    enterApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
 })();
-document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
 </script>
 </body>
 </html>
