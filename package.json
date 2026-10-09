@@ -1,27 +1,20 @@
 {
-  "name": "inventeroy",
+  "name": "warehouse-ims",
   "version": "1.0.0",
-  "description": "",
+  "description": "Warehouse Inventory Management System — REST API backend",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node server.js --seed"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.4",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-validator": "^7.3.2",
-    "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^6.0.1"
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
