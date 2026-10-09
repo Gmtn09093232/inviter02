@@ -13,7 +13,8 @@
 const express = require('express');
 const cors    = require('cors');
 const { createClient } = require('@supabase/supabase-js');
-
+const path = require('path');
+const app = express();
 // ---------------------------------------------------------------------
 // CONFIG
 // ---------------------------------------------------------------------
@@ -28,6 +29,13 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
+});
+
+app.use(express.static(__dirname));
+
+// Fallback: send index.html for any non-API route
+app.get(/^\/(?!api\/).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ---------------------------------------------------------------------
