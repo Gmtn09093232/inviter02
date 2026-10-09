@@ -212,9 +212,9 @@
 /* ============================================================================
    SUPABASE CONFIG — replace with your own project credentials
    ============================================================================ */
-const SUPABASE_URL      = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
-const EMAIL_DOMAIN      = '@wms.local';
+const SUPABASE_URL     = process.env.SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
